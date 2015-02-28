@@ -1,0 +1,27 @@
+name: xgrep
+version: 0.0.1
+author: Daniel Davidson <dbdavidson@yahoo.com>
+dependencies:
+
+# custom <xgrep dependencies>
+# end <xgrep dependencies>
+
+dev_dependencies:
+  yaml: "any"
+  unittest: ">=0.11.0 < 0.12.0"
+  browser: "any"
+  hop: "any"
+  hop_docgen: "any"
+
+# custom <xgrep dev dependencies>
+# end <xgrep dev dependencies>
+
+dependency_overrides:
+# custom <xgrep dependency overrides>
+# end <xgrep dependency overrides>
+
+transformers:
+
+# custom <xgrep transformers>
+# end <xgrep transformers>
+
