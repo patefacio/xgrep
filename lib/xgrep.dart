@@ -1,6 +1,13 @@
 library xgrep.xgrep;
 
-import 'package:thrift/transport.dart';
+import 'dart:async';
+import 'dart:convert' as convert;
+import 'dart:io';
+import 'package:ebisu/ebisu_utils.dart' as ebisu_utils;
+import 'package:id/id.dart';
+import 'package:mongo_dart/mongo_dart.dart';
+import 'package:path/path.dart' as path;
+import 'package:quiver/iterables.dart';
 // custom <additional imports>
 // end <additional imports>
 
