@@ -1,44 +1,65 @@
 part of xgrep.xgrep;
 
-class MlocateIndexUpdater implements IndexUpdater {
-  const MlocateIndexUpdater(this.index);
-
-  final Index index;
+class MlocateIndexUpdater extends IndexUpdater {
   // custom <class MlocateIndexUpdater>
 
-  updateIndex(Index indexId) {
-    createDbPath();
+  updateIndex(Index index) {
+    _createDbPath(index.id);
     final futures = [];
-    dbPaths.forEach((String searchPath, String dbPath) {
-      final command = 'updatedb';
-      final args = ['-l', '0', '-U', searchPath, '-o', dbPath];
-      print('Running: $command $args');
-      futures.add(Process.run(command, args));
-    });
-
-    return Future.wait(futures).then((List<ProcessResult> results) {
-      results.forEach((ProcessResult pr) {
-        print(
-            'Got result:\n====stdout======\n${pr.stdout}\n====stderr======\n${pr.stderr}');
-      });
-    });
+    for(var command in mlocateCommands(index)) {
+      futures.add(_runCommand(command));
+    }
+    return Future.wait(futures);
   }
 
-  DateTime lastUpdate(Index index) => throw 'TODO';
+  String indexDbDir(Id indexId) => path.join(dbPath, indexId.snake);
 
-  Map get dbPaths {
+  static String get dbPath =>
+      path.join(Platform.environment['HOME'], 'xgrepdbs');
+
+  mlocateCommands(Index index) {
     final folderPath = path.join(dbPath, index.id.snake);
-    final result = {};
-    enumerate(index.paths.keys).forEach((IndexedValue iv) => result[iv.value] =
-        path.join(folderPath, '${iv.index}.${path.basename(iv.value)}'));
+    final result = [];
+    index.paths.forEach((String key, PruneSpec pruneSpec) {
+      final mlocateDbPath = path.join(folderPath, path.split(key).sublist(1).join('.'));
+      result.add(_mlocateCommand(key, mlocateDbPath, pruneSpec));
+    });
     return result;
   }
 
-  String get indexDbDir => path.join(dbPath, index.id.snake);
+  List<String> _pruneArgs(PruneSpec pruneSpec) {
+    final result = [];
+    if(!pruneSpec.names.isEmpty) {
+      result..add('-n')..add(pruneSpec.names.join(' '));
+    }
+    if(!pruneSpec.paths.isEmpty) {
+      result..add('-n')..add(pruneSpec.paths.join(' '));
+    }
+    return result;
+  }
 
-  String get dbPath => path.join(Platform.environment['HOME'], 'xgrepdbs');
+  List<String> _mlocateCommand(String searchPath, String dbPath, PruneSpec pruneSpec) =>
+    ['updatedb', '-l', '0', '-U', searchPath, '-o', dbPath ]..addAll(_pruneArgs(pruneSpec));
 
-  createDbPath() => new Directory(indexDbDir)..createSync(recursive: true);
+  _runCommand(List<String> command) {
+    _logger.info('Running $command');
+    return Process.run(command.first, command.sublist(1))
+      .then((ProcessResult result) {
+        _logger.info('mlocate stdout: ${result.stdout}');
+        _logger.info('mlocate stderr: ${result.stderr}');
+      });
+  }
+
+  removeIndex(Id indexId) {
+    _logger.info('Removing ${indexDbDir(indexId)}');
+    return new Directory(indexDbDir(indexId)).delete(recursive:true);
+  }
+
+  _createDbPath(Id indexId) {
+    _logger.info('Creating ${indexDbDir(indexId)}');
+    return new Directory(indexDbDir(indexId))..createSync(recursive: true);
+  }
+
 
   // end <class MlocateIndexUpdater>
 }

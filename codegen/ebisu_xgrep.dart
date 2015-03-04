@@ -19,12 +19,14 @@ void main() {
     ..doc = 'Package providing support for advanced find/grep'
     ..testLibraries = [
       library('test_index'),
-      library('test_mongo_index_persister'),
+      library('test_mongo_index_persister')
+      ..includeLogger = true,
       library('test_mlocate_index_updater'),
       library('test_grep'),
     ]
     ..libraries = [
       library('xgrep')
+      ..includeLogger = true
       ..imports = [
         '"package:path/path.dart" as path',
         "'package:ebisu/ebisu_utils.dart' as ebisu_utils",
@@ -88,11 +90,7 @@ void main() {
         part('mlocate_index_updater')
         ..classes = [
           class_('mlocate_index_updater')
-          ..implement = [ 'IndexUpdater' ]
-          ..immutable = true
-          ..members = [
-            member('index')..type = 'Index'
-          ]
+          ..extend = 'IndexUpdater'
         ],
         part('grep')
         ..classes = [

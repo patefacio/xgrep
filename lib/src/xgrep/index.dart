@@ -49,15 +49,14 @@ class Index {
           paths.fold({}, (prev, elm) => prev..[elm] = emptyPruneSpec),
           pruneNames);
 
-  Index.withPruning(this._id, this._paths, [pruneNames = commonPruneNames]);
+  Index.withPruning(this._id, this._paths, [this._pruneNames = commonPruneNames]);
 
   toString() => '(${runtimeType}) => ${ebisu_utils.prettyJsonMap(toJson())}';
 
-  addPath(String path, [ PruneSpec pruneSpec = emptyPruneSpec ]) =>
-    paths[path] = pruneSpec;
+  addPath(String path, [PruneSpec pruneSpec = emptyPruneSpec]) =>
+      paths[path] = pruneSpec;
 
-  addPaths(Map<String, Prunespec> additions) =>
-      paths.addall(additions);
+  addPaths(Map<String, Prunespec> additions) => paths.addall(additions);
 
   Map toJson() => {
     "_id": _id.snake,
@@ -103,18 +102,20 @@ abstract class IndexPersister {
   // custom <class IndexPersister>
 
   Future get connectFuture => (_connectFuture == null)
-      ? _connectFuture = connect().whenComplete(() => print('Im done'))
+      ? _connectFuture = connect().whenComplete(
+          () => _logger.info('Opened an IndexPersister connection'))
       : _connectFuture;
 
   Future connect();
   Future close();
 
   Future<List<Index>> get indices;
-  Future<Index> lookupIndex(Id id);
   Future persistIndex(Index index);
+  Future<Index> lookupIndex(Id id);
   Future addPaths(Id id, List<String> paths);
   Future removePaths(Id id, List<String> paths);
   Future removeAllIndices();
+  Future removeIndex(Id id);
 
   // end <class IndexPersister>
   Future _connectFuture;
@@ -123,10 +124,10 @@ abstract class IndexPersister {
 abstract class IndexUpdater {
   // custom <class IndexUpdater>
 
-  updateIndex(Index indexId);
-  DateTime lastUpdate(Index index);
-  Map get dbPaths;
-  Index get index;
+  updateIndex(Index index);
+  removeIndex(Id id);
+  history(Id id);
+  Map dbPaths(Id id);
 
   // end <class IndexUpdater>
 }
