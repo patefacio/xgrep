@@ -53,6 +53,12 @@ class Index {
 
   toString() => '(${runtimeType}) => ${ebisu_utils.prettyJsonMap(toJson())}';
 
+  addPath(String path, [ PruneSpec pruneSpec = emptyPruneSpec ]) =>
+    paths[path] = pruneSpec;
+
+  addPaths(Map<String, Prunespec> additions) =>
+      paths.addall(additions);
+
   Map toJson() => {
     "_id": _id.snake,
     "paths": ebisu_utils.toJson(paths),

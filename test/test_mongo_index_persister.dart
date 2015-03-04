@@ -24,73 +24,59 @@ main() async {
   makeIndex() => new Index(idFromString('test_index_i$_i'),
       [ thisDir, join(dirname(thisDir), 'lib') ]);
 
-  try {
-    MongoIndexPersister.withIndexPersister((IndexPersister persister) async {
-      List<Index> indices = await persister
-      .removeAllIndices()
-      .then((_) => persister.indices);
-      //throw 'Foobar';
-      print('Got indices (1) $indices');
+  group('MongoIndexPersister', () {
 
-      test('true is true', () => expect(true, true));
-      //      test('indices empty (1)', () => expect(indices.isEmpty, true));
-      //      test('indices empty (2)', () => expect(indices.isEmpty, true));
+    test('cleanup/removeAllIndices works', () async {
+      await MongoIndexPersister.withIndexPersister(
+          (IndexPersister persister) async {
+            List<Index> indices = await persister
+            .removeAllIndices()
+            .then((_) => persister.indices);
+            expect(indices.length, 0);
+          });
+    });
 
-      if(true) {
-        await persister.persistIndex(makeIndex());
-        List<Index> indicesAgain = await persister.indices;
-        print('Indices again $indicesAgain');
-        // assert(indicesAgain is List);
-        // assert(indicesAgain.first is Index);
-      }
+    test('persist works', () async {
+      await MongoIndexPersister.withIndexPersister(
+          (IndexPersister persister) async {
+            await persister.persistIndex(makeIndex());
+            List<Index> indices = await persister.indices;
+            expect(indices.length, 1);
+            print('foo');
+          });
+    });
 
-      if(true) {
-        print('is true true?');
-        test('true is still true', () => expect(true, true));
-      }
+    test('lookup works', () async {
+      await MongoIndexPersister.withIndexPersister(
+          (IndexPersister persister) async {
+            final index = await persister
+            .lookupIndex(idFromString('test_index_i1'));
+            print('Found $index');
+          });
+    });
 
-      print('Got indices (2) $indices');
-    })
-      .catchError((e) => print('Caugnt $e'));
-  } on Exception catch(e) {
-    print('YCaught $e');
-  }
+    test('add path works', () async {
+      await MongoIndexPersister.withIndexPersister(
+          (IndexPersister persister) async {
+            final index = await persister
+            .addPaths(idFromString('test_index_i1'), [ '/tmp/x', '/tmp/y' ]);
+            print('Found $index');
+            expect(index.paths['/tmp/x'], emptyPruneSpec);
+            expect(index.paths['/tmp/y'], emptyPruneSpec);
+          });
+    });
 
-    // group('mongo persister', () {
-    //   test('indices', () {
-    //     persister.indices
-    //       .then((List<Index> l) => print(l.map((i) => i.toJson())));
-    //   });
-    // });
-
-    // Future.wait([
-    //   persister.connect().then((var o) {
-    //     print('Got ${o.runtimeType}');
-
-    //     test('indices', () {
-    //       persister.indices
-    //           .then((List<Index> l) => print(l.map((i) => i.toJson())));
-    //     });
-
-    //     test('lookupIndex', () {
-    //       persister.lookupIndex(id).then((Index i) => print(i));
-    //     });
-
-    //     test('persistIndex', () {
-    //       persister.persistIndex(index).then((_) => print(_));
-    //     });
-
-    //     test('addPaths', () {
-    //       persister.addPaths(id, ['/tmp/c']).then((_) => print(_));
-    //     });
-    //   })
-    // ]).then((_) => print('done'));
-
-    // test('addPaths', () {
-    //   persister.removePaths(id, ['/tmp/c']).then((_) => print(_));
-
-    //   persister.connect().then((IndexPersister ip) => ip.goo());
-    // });
+    test('remove path works', () async {
+      await MongoIndexPersister.withIndexPersister(
+          (IndexPersister persister) async {
+            final index = await persister
+            .removePaths(idFromString('test_index_i1'), [ '/tmp/x', '/tmp/y' ]);
+            print('Found $index');
+            expect(index.paths['/tmp/x'], null);
+            expect(index.paths['/tmp/y'], null);
+          });
+    });
+  });
 
 // end <main>
 

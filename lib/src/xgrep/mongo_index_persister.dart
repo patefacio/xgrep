@@ -21,9 +21,7 @@ class MongoIndexPersister extends IndexPersister {
 
   Future connect() {
     _db = new Db(uri);
-    print('Trying to connect $uri');
     return _db.open().then((c) {
-      print('RT ${c.runtimeType} $c');
       _indices = _db.collection(collectionName);
       return this;
     });
@@ -42,22 +40,63 @@ class MongoIndexPersister extends IndexPersister {
       .then((List<Map> data) =>
           data.map((Map datum) => Index.fromJson(datum)).toList()));
 
-  Future lookupIndex(Id id) => connectFuture.then((c) => _indices
+  Future lookupIndex(Id id) => connectFuture.then((c) =>
+      _indices
       .find({'_id': id.snake})
       .toList()
-      .then((List<Map> data) =>
-          data.map((Map datum) => Index.fromJson(datum)).toList()));
+      .then((List<Map> data) {
+        print('Data is $data');
+        if(data.isEmpty) {
+          return null;
+        } else {
+          return Index.fromJson(data.first);
+        }
+      }));
 
   Future persistIndex(Index index) {
     print('Persisting $index');
-    return connectFuture.then((c) => _indices.save(index.toJson()));
+    return connectFuture.then((c) =>
+        _indices.save(index.toJson())
+        .then((mongoResult) => _convertResult(mongoResult,
+                () => 'Unable to persist index $index',
+                index)));
   }
 
-  Future addPaths(Id id, List<String> paths) =>
-      connectFuture.then((c) => new Future.sync(() => null));
+  _convertResult(mongoResult, String messageMaker(), [ returnValue ]) {
+    print('result $mongoResult => ${mongoResult.runtimeType}');
+    if(mongoResult['ok'] != 1)
+      throw new Exception('${messageMaker()}\n$mongoResult');
+    return returnValue;
+  }
+
+  Future addPaths(Id id, dynamic paths) =>
+    lookupIndex(id)
+      .then((Index index) {
+        print('FoundXXX $index');
+        if(index != null) {
+          if(paths is List) {
+            paths.forEach((p) => index.addPath(p));
+          } else if(paths is Map) {
+            index.addPaths(paths);
+          } else {
+            throw new Exception('''
+When adding paths provide either:
+* List<String> as paths with no pruning
+* Map<String, PruneSpec> paths to include with some pruning
+''');
+          }
+          return persistIndex(index);
+        }
+      });
 
   Future removePaths(Id id, List<String> paths) =>
-      connectFuture.then((c) => new Future.sync(() => null));
+    lookupIndex(id)
+      .then((Index index) {
+        if(index != null) {
+          paths.forEach((p) => index.paths.remove(p));
+          return persistIndex(index);
+        }
+      });
 
   Future removeAllIndices() =>
     connectFuture.then((c) => _indices.remove({}));
