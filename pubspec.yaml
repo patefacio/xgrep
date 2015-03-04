@@ -38,6 +38,9 @@ dependency_overrides:
   ebisu:
     git: git://github.com/patefacio/ebisu
 
+  mongo_dart:
+    path: /home/dbdavidson/dev/open_source/mongo_dart
+    
 # end <xgrep dependency overrides>
 
 transformers:

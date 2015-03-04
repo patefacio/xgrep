@@ -6,7 +6,7 @@ class MlocateIndexUpdater implements IndexUpdater {
   final Index index;
   // custom <class MlocateIndexUpdater>
 
-  updateIndex() {
+  updateIndex(Index indexId) {
     createDbPath();
     final futures = [];
     dbPaths.forEach((String searchPath, String dbPath) {
@@ -24,12 +24,12 @@ class MlocateIndexUpdater implements IndexUpdater {
     });
   }
 
-  DateTime lastUpdate();
+  DateTime lastUpdate(Index index) => throw 'TODO';
 
   Map get dbPaths {
     final folderPath = path.join(dbPath, index.id.snake);
     final result = {};
-    enumerate(index.paths).forEach((IndexedValue iv) => result[iv.value] =
+    enumerate(index.paths.keys).forEach((IndexedValue iv) => result[iv.value] =
         path.join(folderPath, '${iv.index}.${path.basename(iv.value)}'));
     return result;
   }

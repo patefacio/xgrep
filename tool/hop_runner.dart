@@ -16,7 +16,8 @@ void main(List<String> args) {
   addTask('analyze_test', createAnalyzerTask([
     "test/test_index.dart",
     "test/test_mongo_index_persister.dart",
-    "test/test_mlocate_index_updater.dart"
+    "test/test_mlocate_index_updater.dart",
+    "test/test_grep.dart"
   ]));
 
   runHop(args);

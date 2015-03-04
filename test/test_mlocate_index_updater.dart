@@ -41,7 +41,7 @@ main() {
     });
 
     test('update creates files', () {
-      updator.updateIndex();
+      //updator.updateIndex();
     });
   });
 

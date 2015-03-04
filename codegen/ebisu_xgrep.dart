@@ -21,11 +21,13 @@ void main() {
       library('test_index'),
       library('test_mongo_index_persister'),
       library('test_mlocate_index_updater'),
+      library('test_grep'),
     ]
     ..libraries = [
       library('xgrep')
       ..imports = [
         '"package:path/path.dart" as path',
+        "'package:ebisu/ebisu_utils.dart' as ebisu_utils",
         'package:id/id.dart',
         'package:quiver/iterables.dart',
         'package:mongo_dart/mongo_dart.dart',
@@ -35,19 +37,23 @@ void main() {
       ..parts = [
         part('index')
         ..classes = [
-          class_('index')
-          ..jsonToString = true
+          class_('prune_spec')
+          ..immutable = true
+          ..jsonSupport = true
           ..members = [
-            member('id')..type = 'Id'..isFinal = true..access = RO..ctors = [''],
-            member('paths')..type = 'List<String>'..isFinal = true..access = RO..ctors = [''],
+            member('names')..type = 'List<String>'..classInit = [],
+            member('paths')..type = 'List<String>'..classInit = [],
+          ],
+          class_('index')
+          ..members = [
+            member('id')..type = 'Id'..access = RO,
+            member('paths')
+            ..doc = 'Paths to include in the index with corresponding prunes specific to the path'
+            ..type = 'Map<String, PruneSpec>'..access = RO,
             member('prune_names')
+            ..doc = 'Global set of names to prune on all paths'
             ..type = 'List<String>'
             ..access = RO
-            ..ctorsOpt = ['']
-            ..ctorInit = '''
-const [
-  '.svn', '.gitignore', '.git', '.pub'
-]'''
           ],
           class_('index_stats')
           ..immutable = true
@@ -88,7 +94,20 @@ const [
             member('index')..type = 'Index'
           ]
         ],
-        part('grep'),
+        part('grep')
+        ..classes = [
+          class_('grep_args')
+          ..immutable = true
+          ..members = [
+            member('args')..type = 'List<String>'..classInit = []
+          ],
+          class_('find_grep')
+          ..immutable = true
+          ..members = [
+            member('id')..type = 'Id',
+            member('grep_args')..type = 'GrepArgs',
+          ]
+        ],
       ],
     ];
 

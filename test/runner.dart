@@ -3,6 +3,7 @@ import 'package:logging/logging.dart';
 import 'test_index.dart' as test_index;
 import 'test_mongo_index_persister.dart' as test_mongo_index_persister;
 import 'test_mlocate_index_updater.dart' as test_mlocate_index_updater;
+import 'test_grep.dart' as test_grep;
 
 void testCore(Configuration config) {
   unittestConfiguration = config;
@@ -18,4 +19,5 @@ main() {
   test_index.main();
   test_mongo_index_persister.main();
   test_mlocate_index_updater.main();
+  test_grep.main();
 }
