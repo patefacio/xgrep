@@ -24,7 +24,11 @@ class FindGrep {
 }
 // custom <part grep>
 
-grep(GrepArgs grepArgs, Id indexId, [Indexer indexer]) {
+grepWithIndexer(Id indexId, GrepArgs grepArgs, Indexer indexer) async {
+  //  indexer.ProcessPaths(
+}
+
+grep(GrepArgs grepArgs, Id indexId, [Indexer indexer]) async {
   if (indexer == null) {
     indexer = new Indexer(new MongoIndexPersister(), new MlocateIndexUpdater());
   }

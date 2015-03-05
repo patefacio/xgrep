@@ -51,6 +51,14 @@ class FindArgs {
 }
 
 class Index {
+  bool operator ==(Index other) => identical(this, other) ||
+      _id == other._id &&
+          const MapEquality().equals(_paths, other._paths) &&
+          const ListEquality().equals(_pruneNames, other._pruneNames);
+
+  int get hashCode => hash3(_id, const MapEquality().hash(_paths),
+      const ListEquality<String>().hash(_pruneNames));
+
   Id get id => _id;
   /// Paths to include in the index with corresponding prunes specific to the path
   Map<String, PruneSpec> get paths => _paths;
@@ -93,8 +101,8 @@ class Index {
   void _fromJsonMapImpl(Map jsonMap) {
     _id = idFromString(jsonMap["_id"]);
     // paths is List<String>
-    _paths =
-        ebisu_utils.constructMapFromJsonData(jsonMap["paths"], (data) => data);
+    _paths = ebisu_utils.constructMapFromJsonData(
+        jsonMap["paths"], (data) => PruneSpec.fromJson(data));
     // pruneNames is List<String>
     _pruneNames = ebisu_utils.constructListFromJsonData(
         jsonMap["pruneNames"], (data) => data);
@@ -141,12 +149,13 @@ abstract class IndexPersister {
 abstract class IndexUpdater {
   // custom <class IndexUpdater>
 
-  updateIndex(Index index);
-  removeIndex(Id id);
-  history(Id id);
+  Future updateIndex(Index index);
+  Future removeIndex(Id id);
+  Future history(Id id);
   Map dbPaths(Id id);
 
-  Stream<String> findPaths(Index index, [FindArgs findArgs = emptyFindArgs]);
+  Future<Stream<String>> findPaths(Index index,
+      [FindArgs findArgs = emptyFindArgs]);
 
   // end <class IndexUpdater>
 }
@@ -158,14 +167,59 @@ class Indexer {
   final IndexUpdater indexUpdater;
   // custom <class Indexer>
 
+  static Future withIndexer(Future callback(Indexer indexer)) {
+    return MongoIndexPersister.withIndexPersister((IndexPersister persister) {
+      return callback(new Indexer(persister, new MlocateIndexUpdater()));
+    });
+  }
+
   updateIndex(Index index) => indexPersister
       .persistIndex(index)
       .then((_) => indexUpdater.updateIndex(index));
 
   IndexStats stats(Id indexId) async {
-    final index = await indexPersister.lookupIndex(indexId);
+    final index = await lookupIndex(indexId);
     return new IndexStats(index, indexUpdater.lastUpdate(index));
   }
+
+  removeIndex(Id id) =>
+      indexPersister.removeIndex(id).then((_) => indexUpdater.removeIndex(id));
+
+  removeAllIndices() => indexPersister.indices.then((List<Index> indices) {
+    _logger.info('Indexer removeAllIndices begin removing ${indices.length}');
+    final futures = [];
+    for (final index in indices) {
+      _logger.info('removeAllIndices removing index ${index.id}');
+      futures.add(indexUpdater.removeIndex(index.id));
+    }
+    _logger.info('Indexer removeAllIndices completed');
+    return Future.wait(futures).then((_) => indexPersister.removeAllIndices());
+  });
+
+  dumpIndices() async {
+    _logger.info('Dumping indices');
+    await indexPersister.indices.then((List<Index> indices) {
+      _logger.info('Total indices: ${indices.length}');
+      for (final index in indices) {
+        _logger.fine('Dumping index ${index.id}');
+        print('Dumping ${index.id} => $index');
+      }
+    });
+    return true;
+  }
+
+  Future<List<Index>> get indices => indexPersister.indices;
+
+  Future processPaths(Index index, processor(String)) async {
+    final completer = new Completer<String>();
+    indexUpdater.findPaths(index).then((Stream stream) {
+      stream.listen((String path) => processor(path),
+          onDone: () => completer.complete());
+    });
+    await completer.future;
+  }
+
+  Future<Index> lookupIndex(Id id) => indexPersister.lookupIndex(id);
 
   // end <class Indexer>
 }

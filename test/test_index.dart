@@ -2,14 +2,26 @@ library xgrep.test.test_index;
 
 import 'package:unittest/unittest.dart';
 // custom <additional imports>
-import 'package:xgrep/xgrep.dart';
+import 'dart:async';
+import 'dart:io';
 import 'package:id/id.dart';
+import 'package:logging/logging.dart';
+import 'package:path/path.dart';
+import 'package:xgrep/xgrep.dart';
 // end <additional imports>
 
 // custom <library test_index>
 // end <library test_index>
 main() {
 // custom <main>
+
+  if (false) {
+    Logger.root.onRecord.listen(
+        (LogRecord r) => print("${r.loggerName} [${r.level}]:\t${r.message}"));
+    Logger.root.level = Level.INFO;
+  }
+
+  defaultCollectionPrefix = 'test';
 
   group('index', () {
     test('default ctor', () {
@@ -36,6 +48,27 @@ main() {
       expect(index.paths['/x/a'], aPruneSpec);
       expect(index.paths['/x/b'], bPruneSpec);
       expect(index.pruneNames, ['voldermort']);
+    });
+
+    test('basic indexer', () async {
+      final thisDir = dirname(Platform.script.path);
+      final index = new Index(idFromString('test_indexer'), [thisDir]);
+
+      await Indexer.withIndexer((Indexer indexer) async {
+        expect(indexer.indexPersister is MongoIndexPersister, true);
+        await indexer.removeAllIndices();
+        var indices = await indexer.indices;
+        expect(indices.length, 0);
+        await indexer.updateIndex(index);
+        indices = await indexer.indices;
+        await indexer.dumpIndices();
+        expect(indices.length, 1);
+        final readIndex = await indexer.lookupIndex(index.id);
+        expect(readIndex, index);
+        await indexer.removeAllIndices();
+        indices = await indexer.indices;
+        expect(indices.length, 0);
+      });
     });
   });
 

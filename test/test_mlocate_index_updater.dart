@@ -20,10 +20,12 @@ final _logger = new Logger('test_mlocate_index_updater');
 main() {
 // custom <main>
 
-  Logger.root.onRecord.listen(
-      (LogRecord r) => print("${r.loggerName} [${r.level}]:\t${r.message}"));
+  if (false) {
+    Logger.root.onRecord.listen(
+        (LogRecord r) => print("${r.loggerName} [${r.level}]:\t${r.message}"));
 
-  //Logger.root.level = Level.INFO;
+    Logger.root.level = Level.INFO;
+  }
 
   final varDir = '/var';
   final bin = '/bin';
@@ -39,7 +41,6 @@ main() {
     throw new Exception('For this test to run, clean up $indexDbDir');
   }
 
-  print(home);
   group('basics', () {
     test('index path matches', () {
       expect(indexDbDir, join(MlocateIndexUpdater.dbPath, indexId.snake));

@@ -32,11 +32,14 @@ class MongoIndexPersister extends IndexPersister {
     return connectFuture.then((c) => _db.close());
   }
 
-  Future<List<Index>> get indices => connectFuture.then((c) => _indices
-      .find({})
-      .toList()
-      .then((List<Map> data) =>
-          data.map((Map datum) => Index.fromJson(datum)).toList()));
+  Future<List<Index>> get indices {
+    _logger.info('Retrieving indices from mongo');
+    return connectFuture.then((c) => _indices
+        .find({})
+        .toList()
+        .then((List<Map> data) =>
+            data.map((Map datum) => Index.fromJson(datum)).toList()));
+  }
 
   Future lookupIndex(Id id) => connectFuture.then((c) => _indices
       .find({'_id': id.snake})

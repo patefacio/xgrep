@@ -5,6 +5,7 @@ import 'package:unittest/unittest.dart';
 
 import 'dart:io';
 import 'package:id/id.dart';
+import 'package:logging/logging.dart';
 import 'package:path/path.dart';
 import 'package:xgrep/xgrep.dart';
 
@@ -14,6 +15,12 @@ import 'package:xgrep/xgrep.dart';
 // end <library test_grep>
 main() {
 // custom <main>
+
+  if (false) {
+    Logger.root.onRecord.listen(
+        (LogRecord r) => print("${r.loggerName} [${r.level}]:\t${r.message}"));
+    Logger.root.level = Level.INFO;
+  }
 
   group('grep', () {
     test('grep', () {

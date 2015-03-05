@@ -56,6 +56,7 @@ void main() {
             member('excludes')..type = 'List<RegExp>'..classInit = [],
           ],
           class_('index')
+          ..opEquals = true
           ..members = [
             member('id')..type = 'Id'..access = RO,
             member('paths')

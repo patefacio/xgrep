@@ -3,7 +3,8 @@ part of xgrep.xgrep;
 class MlocateIndexUpdater extends IndexUpdater {
   // custom <class MlocateIndexUpdater>
 
-  updateIndex(Index index) {
+  Future updateIndex(Index index) {
+    _logger.info('Updating index ${index.id}');
     _createDbPath(index.id);
     final futures = [];
     for (var command in updatedbCommands(index)) {
@@ -80,20 +81,23 @@ class MlocateIndexUpdater extends IndexUpdater {
 
   _runCommand(List<String> command) {
     _logger.info('Running $command');
-    return Process.run(command.first, command.sublist(1)).then(
-        (ProcessResult result) {
-      _logger.info('mlocate stdout: ${result.stdout}');
-      _logger.info('mlocate stderr: ${result.stderr}');
+    final args = command.sublist(1);
+    final path = command.skipWhile((p) => p != '-U').skip(1).first;
+    return Process.run(command.first, args).then((ProcessResult result) {
+      if (result.stdout.length > 0) _logger
+          .info('mlocate <$path> stdout: ${result.stdout}');
+      if (result.stderr.length > 0) _logger
+          .info('mlocate <$path> stderr: ${result.stderr}');
     });
   }
 
   removeIndex(Id indexId) {
-    _logger.info('Removing ${indexDbDir(indexId)}');
+    _logger.info('Removing directory ${indexDbDir(indexId)}');
     return new Directory(indexDbDir(indexId)).delete(recursive: true);
   }
 
   _createDbPath(Id indexId) {
-    _logger.info('Creating ${indexDbDir(indexId)}');
+    _logger.info('Creating directory ${indexDbDir(indexId)}');
     return new Directory(indexDbDir(indexId))..createSync(recursive: true);
   }
 
