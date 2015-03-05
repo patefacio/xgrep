@@ -14,13 +14,14 @@ main() {
   group('index', () {
     test('default ctor', () {
       final index = new Index(idFromString('foo_bar'), ['/x/a', '/x/b']);
-      expect(index.paths, { '/x/a' : emptyPruneSpec, '/x/b' : emptyPruneSpec });
+      expect(index.paths, {'/x/a': emptyPruneSpec, '/x/b': emptyPruneSpec});
       expect(index.pruneNames, commonPruneNames);
     });
     test('default ctor with prune names', () {
       final pruneNames = ['.git', '.svn'];
-      final index = new Index(idFromString('foo_bar'), ['/x/a', '/x/b'], pruneNames);
-      expect(index.paths, { '/x/a' : emptyPruneSpec, '/x/b' : emptyPruneSpec });
+      final index =
+          new Index(idFromString('foo_bar'), ['/x/a', '/x/b'], pruneNames);
+      expect(index.paths, {'/x/a': emptyPruneSpec, '/x/b': emptyPruneSpec});
       expect(index.pruneNames, pruneNames);
     });
 
@@ -28,13 +29,13 @@ main() {
       final pruneNames = ['.git', '.svn'];
       final aPruneSpec = new PruneSpec([], ['/x/a/ignore_1', '/x/a/ignore_2']);
       final bPruneSpec = new PruneSpec(commonPruneNames, ['/x/b/ignore_1']);
-      final index = new Index.withPruning(idFromString('foo_bar'),
-          {
-            '/x/a' : aPruneSpec,
-            '/x/b' : bPruneSpec,
-          },
-          []);
-      //expect(index.paths['/x/a'], aPruneSpec);
+      final index = new Index.withPruning(idFromString('foo_bar'), {
+        '/x/a': aPruneSpec,
+        '/x/b': bPruneSpec,
+      }, ['voldermort']);
+      expect(index.paths['/x/a'], aPruneSpec);
+      expect(index.paths['/x/b'], bPruneSpec);
+      expect(index.pruneNames, ['voldermort']);
     });
   });
 

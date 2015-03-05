@@ -21,7 +21,8 @@ void main() {
       library('test_index'),
       library('test_mongo_index_persister')
       ..includeLogger = true,
-      library('test_mlocate_index_updater'),
+      library('test_mlocate_index_updater')
+      ..includeLogger = true,
       library('test_grep'),
     ]
     ..libraries = [
@@ -35,16 +36,24 @@ void main() {
         'package:mongo_dart/mongo_dart.dart',
         'io',
         'async',
+        'convert',
       ]
       ..parts = [
         part('index')
         ..classes = [
           class_('prune_spec')
           ..immutable = true
+          ..opEquals = true
           ..jsonSupport = true
           ..members = [
             member('names')..type = 'List<String>'..classInit = [],
             member('paths')..type = 'List<String>'..classInit = [],
+          ],
+          class_('find_args')
+          ..immutable = true
+          ..members = [
+            member('includes')..type = 'List<RegExp>'..classInit = [],
+            member('excludes')..type = 'List<RegExp>'..classInit = [],
           ],
           class_('index')
           ..members = [
@@ -102,7 +111,8 @@ void main() {
           class_('find_grep')
           ..immutable = true
           ..members = [
-            member('id')..type = 'Id',
+            member('indexer')..type = 'Indexer',
+            member('index_id')..type = 'Id',
             member('grep_args')..type = 'GrepArgs',
           ]
         ],

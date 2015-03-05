@@ -9,36 +9,27 @@ class GrepArgs {
 }
 
 class FindGrep {
-  const FindGrep(this.id, this.grepArgs);
+  const FindGrep(this.indexer, this.indexId, this.grepArgs);
 
-  final Id id;
+  final Indexer indexer;
+  final Id indexId;
   final GrepArgs grepArgs;
   // custom <class FindGrep>
 
   Future grep() {
-    return new MongoIndexPersister()
-        .lookupIndex(id)
-        .then((List<Index> indices) {
-      final index = indices.first;
-      final updater = new MlocateIndexUpdater(index);
-      print('Got index $index\nneed to look in ${updater.indexDbDir}');
-      final dbDir = new Directory(updater.indexDbDir);
-      var future = dbDir.existsSync()
-          ? _grep(updater)
-          : updater.updateIndex(index).then((_) => _grep(updater));
-      return future;
-    });
-  }
-
-  Future _grep(IndexUpdater updater) {
-    final command = 'mlocate';
-    final dbPaths = updater.dbPaths.values.toList();
-    final args = dbPaths.map((p) => '-d $p').toList();
-    print('Will search $command $args');
-    return new Future.sync(() => 42);
+    print('Grepping $indexId');
   }
 
   // end <class FindGrep>
 }
 // custom <part grep>
+
+grep(GrepArgs grepArgs, Id indexId, [Indexer indexer]) {
+  if (indexer == null) {
+    indexer = new Indexer(new MongoIndexPersister(), new MlocateIndexUpdater());
+  }
+  final findGrep = new FindGrep(indexer, indexId, grepArgs);
+  findGrep.grep();
+}
+
 // end <part grep>

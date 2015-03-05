@@ -3,6 +3,13 @@ part of xgrep.xgrep;
 class PruneSpec {
   const PruneSpec(this.names, this.paths);
 
+  bool operator ==(PruneSpec other) => identical(this, other) ||
+      const ListEquality().equals(names, other.names) &&
+          const ListEquality().equals(paths, other.paths);
+
+  int get hashCode => hash2(const ListEquality<String>().hash(names),
+      const ListEquality<String>().hash(paths));
+
   final List<String> names;
   final List<String> paths;
   // custom <class PruneSpec>
@@ -34,6 +41,15 @@ class PruneSpec {
         paths = other.paths == null ? null : new List.from(other.paths);
 }
 
+class FindArgs {
+  const FindArgs(this.includes, this.excludes);
+
+  final List<RegExp> includes;
+  final List<RegExp> excludes;
+  // custom <class FindArgs>
+  // end <class FindArgs>
+}
+
 class Index {
   Id get id => _id;
   /// Paths to include in the index with corresponding prunes specific to the path
@@ -49,7 +65,8 @@ class Index {
           paths.fold({}, (prev, elm) => prev..[elm] = emptyPruneSpec),
           pruneNames);
 
-  Index.withPruning(this._id, this._paths, [this._pruneNames = commonPruneNames]);
+  Index.withPruning(this._id, this._paths,
+      [this._pruneNames = commonPruneNames]);
 
   toString() => '(${runtimeType}) => ${ebisu_utils.prettyJsonMap(toJson())}';
 
@@ -129,6 +146,8 @@ abstract class IndexUpdater {
   history(Id id);
   Map dbPaths(Id id);
 
+  Stream<String> findPaths(Index index, [FindArgs findArgs = emptyFindArgs]);
+
   // end <class IndexUpdater>
 }
 
@@ -154,5 +173,6 @@ class Indexer {
 
 const commonPruneNames = const ['.svn', '.gitignore', '.git', '.pub'];
 const emptyPruneSpec = const PruneSpec(const [], const []);
+const emptyFindArgs = const FindArgs(const [], const []);
 
 // end <part index>
