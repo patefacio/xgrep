@@ -31,47 +31,42 @@ class FindGrep {
 
 grepWithIndexer(Id indexId, GrepArgs grepArgs, Indexer indexer) {
   final nullTerminator = new String.fromCharCode(0);
-  return indexer
-  .lookupIndex(indexId)
-    .then((Index index) {
-      final command = _xargsGrepCommand(grepArgs);
-      return Process
-        .start(command.first, command.sublist(1))
-        .then((Process process) {
-          print('Started $command');
-          final completer = new Completer<String>();
+  return indexer.lookupIndex(indexId).then((Index index) {
+    final command = _xargsGrepCommand(grepArgs);
+    _logger.info(() => 'Grep running $command');
+    return Process.start(command.first, command.sublist(1)).then(
+        (Process process) {
+      final completer = new Completer<String>();
 
-          process
-            .stdout
-            .transform(new Utf8Decoder())
-            .transform(new LineSplitter())
-            .listen((line) => print(line));
+      int matches = 0;
+      process.stdout
+          .transform(new Utf8Decoder())
+          .transform(new LineSplitter())
+          .listen((line) {
+        matches++;
+        print(line);
+      });
 
-          indexer
-            .findPaths(index)
-            .then((Stream stream) {
-              print('Got stream of paths on ${index.id}');
-              return stream
-                .map((path) => path + nullTerminator)
-                .listen((String s) {
-                  print('Got $s and writing to process');
-                  return process.stdin.write(s);
-                },
-                    onDone: () {
-                  process.stdin.close();
-                  completer.complete();
-                });
-            });
-
-          return completer.future;
+      indexer.findPaths(index).then((Stream stream) {
+        return stream.map((path) => path + nullTerminator).listen((String s) {
+          return process.stdin.write(s);
+        }, onDone: () {
+          process.stdin.close();
+          completer.complete();
         });
+      });
+
+      _logger.info(() => 'Grep completed with $matches matches');
+
+      return completer.future;
     });
+  });
 }
 
-grep(Id indexId, GrepArgs grepArgs) =>
-  Indexer.withIndexer((Indexer indexer) => grepWithIndexer(indexId, grepArgs, indexer));
+grep(Id indexId, GrepArgs grepArgs) => Indexer.withIndexer(
+    (Indexer indexer) => grepWithIndexer(indexId, grepArgs, indexer));
 
 _xargsGrepCommand(GrepArgs grepArgs) =>
-  [ 'xargs', '-0', 'grep', '-n', '-E', 'test' ];
+    ['xargs', '-0', 'grep', '-n', '-E', 'test'];
 
 // end <part grep>

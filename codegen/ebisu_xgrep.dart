@@ -17,6 +17,57 @@ void main() {
     ..license = 'boost'
     ..rootPath = topDir
     ..doc = 'Package providing support for advanced find/grep'
+    ..scripts = [
+      script('xgrep')
+      ..doc = '''
+
+A script for indexing directories for the purpose of doing find/greps
+on those indices.
+
+If an index is supplied without other arguments, a list of existing
+indices will be displayed.
+
+If index is supplied with any paths it will
+update the index - as in persist it as well as update it.
+
+If an index is supplied with update option , the databases for the
+index will be updated.
+
+If an index is supplied with grep args, a grep on the index will be
+performed.'''
+      ..args = [
+        scriptArg('index')
+        ..doc = 'Id of index associated with command'
+        ..type = ArgType.STRING
+        ..abbr = 'i',
+        scriptArg('path')
+        ..doc = '''
+Colon separated fields specifying path with pruning. Fields are:
+ 1: The path to include
+ 2: One or more path names (i.e. unqualified folder names)
+    to prune
+ e.g. -p /home/gnome/ebisu:cache:.pub:.git
+'''
+        ..type = ArgType.STRING
+        ..isMultiple = true
+        ..abbr = 'p',
+        scriptArg('prune_names')
+        ..doc = 'Global prune names excluded from all paths'
+        ..type = ArgType.STRING
+        ..abbr = 'P'
+        ..isMultiple = true,
+        scriptArg('prune_paths')
+        ..doc = 'Fully qualified path existing somewhere within a path to be excluded'
+        ..type = ArgType.STRING
+        ..abbr = 'X'
+        ..isMultiple = true,
+        scriptArg('remove_index')
+        ..doc = 'Id of index to remove'
+        ..type = ArgType.STRING
+        ..abbr = 'r'
+        ..isMultiple = true,
+      ]
+    ]
     ..testLibraries = [
       library('test_index'),
       library('test_mongo_index_persister')

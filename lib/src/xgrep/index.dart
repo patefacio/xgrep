@@ -242,7 +242,8 @@ class Indexer {
   }
 
   Future<Stream<String>> findPaths(Index index,
-      [FindArgs findArgs = emptyFindArgs]) => indexUpdater.findPaths(index, findArgs);
+          [FindArgs findArgs = emptyFindArgs]) =>
+      indexUpdater.findPaths(index, findArgs);
 
   Future<Index> lookupIndex(Id id) => indexPersister.lookupIndex(id);
 
