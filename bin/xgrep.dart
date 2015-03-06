@@ -1,4 +1,6 @@
 #!/usr/bin/env dart
+/// 
+/// xargs.dart [OPTIONS] [PATTERN...]
 ///
 /// A script for indexing directories for the purpose of doing find/greps
 /// on those indices.
@@ -41,6 +43,8 @@ ArgParser _parser;
 void _usage() {
   print('''
 
+xargs.dart [OPTIONS] [PATTERN...]
+
 A script for indexing directories for the purpose of doing find/greps
 on those indices.
 
@@ -75,49 +79,102 @@ positional argument.
 //! The result is a map containing all options, including positional options
 Map _parseArgs(List<String> args) {
   ArgResults argResults;
-  Map result = {};
+  Map result = { };
   List remaining = [];
 
   _parser = new ArgParser();
   try {
     /// Fill in expectations of the parser
-    _parser.addFlag('update', help: '''
+    _parser.addFlag('update',
+      help: '''
 If set will update any specified indices
-''', abbr: 'u', defaultsTo: false);
-    _parser.addFlag('remove-index', help: '''
+''',
+      abbr: 'u',
+      defaultsTo: false
+    );
+    _parser.addFlag('remove-index',
+      help: '''
 If set will remove any specified indices
-''', abbr: 'r', defaultsTo: false);
-    _parser.addFlag('remove-all', help: '''
+''',
+      abbr: 'r',
+      defaultsTo: false
+    );
+    _parser.addFlag('remove-all',
+      help: '''
 Remove all stored indices
-''', abbr: 'R', defaultsTo: false);
-    _parser.addFlag('list', help: '''
+''',
+      abbr: 'R',
+      defaultsTo: false
+    );
+    _parser.addFlag('list',
+      help: '''
 For any indices provided, list all files. Effectively *find* on the index.
-''', abbr: 'l', defaultsTo: false);
-    _parser.addFlag('help', help: '''
+''',
+      abbr: 'l',
+      defaultsTo: false
+    );
+    _parser.addFlag('help',
+      help: '''
 Display this help screen
-''', abbr: 'h', defaultsTo: false);
+''',
+      abbr: 'h',
+      defaultsTo: false
+    );
 
-    _parser.addOption('index', help: '''
+    _parser.addOption('index',
+      help: '''
 Id of index associated with command
-''', defaultsTo: null, allowMultiple: true, abbr: 'i', allowed: null);
-    _parser.addOption('path', help: '''
+''',
+      defaultsTo: null,
+      allowMultiple: true,
+      abbr: 'i',
+      allowed: null
+    );
+    _parser.addOption('path',
+      help: '''
 Colon separated fields specifying path with pruning. Fields are:
  1: The path to include
  2: One or more path names (i.e. unqualified folder names)
     to prune
  e.g. -p /home/gnome/ebisu:cache:.pub:.git
 
-''', defaultsTo: null, allowMultiple: true, abbr: 'p', allowed: null);
-    _parser.addOption('prune-name', help: '''
+''',
+      defaultsTo: null,
+      allowMultiple: true,
+      abbr: 'p',
+      allowed: null
+    );
+    _parser.addOption('prune-name',
+      help: '''
 Global prune names excluded from all paths
-''', defaultsTo: null, allowMultiple: true, abbr: 'P', allowed: null);
-    _parser.addOption('prune-path', help: '''
+''',
+      defaultsTo: null,
+      allowMultiple: true,
+      abbr: 'P',
+      allowed: null
+    );
+    _parser.addOption('prune-path',
+      help: '''
 Fully qualified path existing somewhere within a path to be excluded
-''', defaultsTo: null, allowMultiple: true, abbr: 'X', allowed: null);
+''',
+      defaultsTo: null,
+      allowMultiple: true,
+      abbr: 'X',
+      allowed: null
+    );
+    _parser.addOption('grep-args',
+      help: '''
+Arguments passed directly to grep
+''',
+      defaultsTo: null,
+      allowMultiple: true,
+      abbr: 'g',
+      allowed: null
+    );
 
     /// Parse the command line options (excluding the script)
     argResults = _parser.parse(args);
-    if (argResults.wasParsed('help')) {
+    if(argResults.wasParsed('help')) {
       _usage();
       exit(0);
     }
@@ -129,10 +186,12 @@ Fully qualified path existing somewhere within a path to be excluded
     result['remove-index'] = argResults['remove-index'];
     result['remove-all'] = argResults['remove-all'];
     result['list'] = argResults['list'];
+    result['grep-args'] = argResults['grep-args'];
     result['help'] = argResults['help'];
 
-    return {'options': result, 'rest': argResults.rest};
-  } catch (e) {
+    return { 'options': result, 'rest': argResults.rest };
+
+  } catch(e) {
     _usage();
     throw e;
   }
@@ -141,8 +200,8 @@ Fully qualified path existing somewhere within a path to be excluded
 final _logger = new Logger('xgrep');
 
 main(List<String> args) {
-  Logger.root.onRecord.listen(
-      (LogRecord r) => print("${r.loggerName} [${r.level}]:\t${r.message}"));
+  Logger.root.onRecord.listen((LogRecord r) =>
+      print("${r.loggerName} [${r.level}]:\t${r.message}"));
   Logger.root.level = Level.INFO;
   Map argResults = _parseArgs(args);
   Map options = argResults['options'];
@@ -190,14 +249,14 @@ xgrep -i my_dart \\
     final pruneNames = options['prune-name'];
     final removeIndex = options['remove-index'];
     final removeAll = options['remove-all'];
+    final list = options['list'];
     final update = options['update'];
+    final grepArgs = options['grep-args'];
     print(options);
 
-    _logger.info(() =>
-        'indices:$indices, paths:$paths, prunePaths:$prunePaths,'
-        'pruneNames:$pruneNames, removeAll:$removeAll,'
-        'removeIndes:$removeIndex, update:$update'
-                 );
+    _logger.info(() => 'indices:$indices, paths:$paths, prunePaths:$prunePaths,'
+        'pruneNames:$pruneNames, removeAll:$removeAll, list:$list,'
+        'removeIndes:$removeIndex, update:$update, grepArgs:$grepArgs');
 
     if (!indices.isEmpty) {
       if (indices.length == 1 && !paths.isEmpty) {
@@ -215,7 +274,7 @@ xgrep -i my_dart \\
           return indexer.saveAndUpdateIndex(index);
         });
       } else {
-        if(update) {
+        if (update) {
           positionalsCheck(positionals, '*update*');
           print('Updating $indices');
           Indexer.withIndexer((Indexer indexer) {
@@ -225,25 +284,32 @@ xgrep -i my_dart \\
             });
             return Future.wait(futures);
           });
+        } else if(list) {
+          Indexer.withIndexer((Indexer indexer) {
+            final futures = [];
+            indices.forEach((String idStr) =>
+              futures.add(indexer.lookupIndex(idFromString(idStr))
+                  .then((Index index) =>
+                      (index != null? indexer.processPaths(index, (String path) => print(path)) : index))));
+            print('Futures => $futures');
+            return Future.wait(futures);
+          });
         } else if (removeIndex) {
           positionalsCheck(positionals, '*remove*');
           print('Removing indices $indices');
-          Indexer.withIndexer((Indexer indexer) =>
-              indices.forEach((String idStr) => indexer.removeIndex(idFromString(idStr))));
+          Indexer.withIndexer((Indexer indexer) => indices.forEach(
+              (String idStr) => indexer.removeIndex(idFromString(idStr))));
         } else {
           // Not removing specified indices. Either it is a request to update
           // indices or do a grep. If there is one positional arg that is the
           // grep arg, otherwise, it is an update
-          if (positionals.length > 1) {
-            print('''
-You have multiple remaining arguments. If you are trying to grep one or more
-indices for more than one text pattern, use an egrep style pattern''');
-            exit(-1);
-          } else if (positionals.length == 1) {
-            print('Doing grep of ${positionals.first} on $indices');
+          if (!positionals.isEmpty || !grepArgs.isEmpty) {
+            print(
+                'Doing grep of ${positionals.first} on $indices with args $grepArgs');
             final futures = [];
+            positionals.forEach((String positional) => grepArgs.addAll(['-e', positional]));
             for (final id in indices) {
-              futures.add(grep(idFromString(id), new GrepArgs([])));
+              futures.add(grep(idFromString(id), grepArgs));
             }
             return Future.wait(futures);
           } else {
@@ -280,12 +346,6 @@ indices for more than one text pattern, use an egrep style pattern''');
         }
       }
     }
-
-    if (options['list']) {
-      print('List them!');
-    }
-
-    print('Positionals => $positionals');
   }
 
   // end <xgrep main>
@@ -304,3 +364,4 @@ The following args remain $positionals.''');
 }
 
 // end <xgrep global>
+

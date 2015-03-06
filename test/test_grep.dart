@@ -26,14 +26,16 @@ main() {
     test('grep', () async {
       final indexId = idFromString('test_index');
       final thisDir = dirname(Platform.script.path);
-      final srcIndex = new Index(
-          indexId, [thisDir, '/home/dbdavidson/dev/open_source/ebisu/test']);
+      final srcIndex = new Index(indexId, [thisDir]);
 
-      // await Indexer
-      //     .withIndexer((Indexer indexer) => indexer.updateIndex(srcIndex));
+      await Indexer
+          .withIndexer((Indexer indexer) => indexer.saveAndUpdateIndex(srcIndex));
 
-      final grepArgs = new GrepArgs(['foo']);
-      await grep(srcIndex.id, grepArgs);
+      await grep(srcIndex.id, ['-e', 'updateIndex'] );
+
+      await Indexer
+      .withIndexer((Indexer indexer) => indexer.removeAllIndices());
+
     });
   });
 

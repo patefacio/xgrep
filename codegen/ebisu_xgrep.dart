@@ -11,7 +11,7 @@ void main() {
 
   String here = path.absolute(Platform.script.path);
   final topDir = path.dirname(path.dirname(here));
-  useDartFormatter = true;
+  //useDartFormatter = true;
   System ebisu = system('xgrep')
     ..includeHop = true
     ..license = 'boost'
@@ -20,6 +20,8 @@ void main() {
     ..scripts = [
       script('xgrep')
       ..doc = '''
+
+xargs.dart [OPTIONS] [PATTERN...]
 
 A script for indexing directories for the purpose of doing find/greps
 on those indices.
@@ -100,6 +102,10 @@ For any indices provided, list all files. Effectively *find* on the index.'''
         ..type = ArgType.STRING
         ..abbr = 'l'
         ..isFlag = true,
+        scriptArg('grep_args')
+        ..doc = 'Arguments passed directly to grep'
+        ..abbr = 'g'
+        ..isMultiple = true,
       ]
     ]
     ..testLibraries = [
@@ -218,33 +224,7 @@ Default implementation of an [IndexUpdater] which manages indices with
 Linux *updatedb* and *mlocate*'''
           ..extend = 'IndexUpdater'
         ],
-        part('grep')
-        ..classes = [
-          class_('grep_args')
-          ..immutable = true
-          ..members = [
-            member('args')..type = 'List<String>'..classInit = []
-          ],
-          class_('find_grep')
-          ..doc = '''
-Takes a stream of paths and passes them to *xargs grep*
-'''
-          ..immutable = true
-          ..members = [
-            member('index_id')
-            ..doc = '''
-[Id] of index producing the stream of filenames this class consumes
-'''
-            ..type = 'Id',
-            member('found')
-            ..doc = '''
-[Stream] of file paths produced by the query on index to which *grep*
-will be applied'''
-            ..type = 'Stream<String>',
-            member('grep_args')
-            ..type = 'GrepArgs',
-          ]
-        ],
+        part('grep'),
       ],
     ];
 

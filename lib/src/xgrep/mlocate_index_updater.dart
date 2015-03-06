@@ -94,8 +94,11 @@ class MlocateIndexUpdater extends IndexUpdater {
   }
 
   removeIndex(Id indexId) {
-    _logger.info('Removing directory ${indexDbDir(indexId)}');
-    return new Directory(indexDbDir(indexId)).delete(recursive: true);
+    final dir = indexDbDir(indexId);
+    _logger.info('Removing directory $dir');
+    return new Directory(dir)
+      .delete(recursive: true)
+      .catchError((e) => _logger.warning('Failed to delete $dir:$e'));
   }
 
   _createDbPath(Id indexId) {

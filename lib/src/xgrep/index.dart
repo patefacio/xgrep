@@ -5,12 +5,12 @@ part of xgrep.xgrep;
 class PruneSpec {
   const PruneSpec(this.names, this.paths);
 
-  bool operator ==(PruneSpec other) => identical(this, other) ||
-      const ListEquality().equals(names, other.names) &&
-          const ListEquality().equals(paths, other.paths);
+  bool operator==(PruneSpec other) =>
+    identical(this, other) ||
+    const ListEquality().equals(names, other.names) &&
+    const ListEquality().equals(paths, other.paths);
 
-  int get hashCode => hash2(const ListEquality<String>().hash(names),
-      const ListEquality<String>().hash(paths));
+  int get hashCode => hash2(const ListEquality<String>().hash(names), const ListEquality<String>().hash(paths));
 
   /// Directory names (without paths) which should not be included in a path database.
   final List<String> names;
@@ -19,30 +19,34 @@ class PruneSpec {
   // custom <class PruneSpec>
   // end <class PruneSpec>
 
-  Map toJson() =>
-      {"names": ebisu_utils.toJson(names), "paths": ebisu_utils.toJson(paths),};
+  Map toJson() => {
+      "names": ebisu_utils.toJson(names),
+      "paths": ebisu_utils.toJson(paths),
+  };
 
   static PruneSpec fromJson(Object json) {
-    if (json == null) return null;
-    if (json is String) {
+    if(json == null) return null;
+    if(json is String) {
       json = convert.JSON.decode(json);
     }
     assert(json is Map);
     return new PruneSpec._fromJsonMapImpl(json);
   }
 
-  PruneSpec._fromJsonMapImpl(Map jsonMap)
-      :
-      // names is List<String>
-      names = ebisu_utils.constructListFromJsonData(
-          jsonMap["names"], (data) => data),
-        // paths is List<String>
-        paths = ebisu_utils.constructListFromJsonData(
-            jsonMap["paths"], (data) => data);
+  PruneSpec._fromJsonMapImpl(Map jsonMap) :
+    // names is List<String>
+    names = ebisu_utils
+      .constructListFromJsonData(jsonMap["names"],
+                                 (data) => data),
+    // paths is List<String>
+    paths = ebisu_utils
+      .constructListFromJsonData(jsonMap["paths"],
+                                 (data) => data);
 
-  PruneSpec._copy(PruneSpec other)
-      : names = other.names == null ? null : new List.from(other.names),
-        paths = other.paths == null ? null : new List.from(other.paths);
+  PruneSpec._copy(PruneSpec other) :
+    names = other.names == null? null: new List.from(other.names),
+    paths = other.paths == null? null: new List.from(other.paths);
+
 }
 
 class FindArgs {
@@ -58,13 +62,13 @@ class FindArgs {
 /// indexed and later searched.
 ///
 class Index {
-  bool operator ==(Index other) => identical(this, other) ||
-      _id == other._id &&
-          const MapEquality().equals(_paths, other._paths) &&
-          const ListEquality().equals(_pruneNames, other._pruneNames);
+  bool operator==(Index other) =>
+    identical(this, other) ||
+    _id == other._id &&
+    const MapEquality().equals(_paths, other._paths) &&
+    const ListEquality().equals(_pruneNames, other._pruneNames);
 
-  int get hashCode => hash3(_id, const MapEquality().hash(_paths),
-      const ListEquality<String>().hash(_pruneNames));
+  int get hashCode => hash3(_id, const MapEquality().hash(_paths), const ListEquality<String>().hash(_pruneNames));
 
   Id get id => _id;
   /// Paths to include in the index mapped with any corresponding pruning specific to
@@ -199,16 +203,15 @@ class Indexer {
 
   updateIndexById(Id indexId) async {
     final index = await lookupIndex(indexId);
-    if(index != null) {
+    if (index != null) {
       return updateIndex(index);
     }
     _logger.warning('Requested update of unkown index: ${indexId.snake}');
   }
 
-  saveAndUpdateIndex(Index index) =>
-    indexPersister
-    .persistIndex(index)
-    .then((_) => indexUpdater.updateIndex(index));
+  saveAndUpdateIndex(Index index) => indexPersister
+      .persistIndex(index)
+      .then((_) => indexUpdater.updateIndex(index));
 
   IndexStats stats(Id indexId) async {
     final index = await lookupIndex(indexId);
