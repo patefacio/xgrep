@@ -26,10 +26,11 @@ main() {
     test('grep', () async {
       final indexId = idFromString('test_index');
       final thisDir = dirname(Platform.script.path);
-      final srcIndex = new Index(indexId, [thisDir]);
+      final srcIndex = new Index(
+          indexId, [thisDir, '/home/dbdavidson/dev/open_source/ebisu/test']);
 
-      await Indexer.withIndexer((Indexer indexer) =>
-          indexer.updateIndex(srcIndex));
+      // await Indexer
+      //     .withIndexer((Indexer indexer) => indexer.updateIndex(srcIndex));
 
       final grepArgs = new GrepArgs(['foo']);
       await grep(srcIndex.id, grepArgs);

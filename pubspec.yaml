@@ -14,6 +14,8 @@ dependencies:
   mongo_dart:
     git: git://github.com/vadimtsushko/mongo_dart
 
+  args: "^0.13.0"
+
 # end <xgrep dependencies>
 
 dev_dependencies:
@@ -40,6 +42,9 @@ dependency_overrides:
 
   mongo_dart:
     path: /home/dbdavidson/dev/open_source/mongo_dart
+
+  hop: ">=0.29.0"
+  args: "^0.13.0"  
     
 # end <xgrep dependency overrides>
 

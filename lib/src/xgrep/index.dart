@@ -204,8 +204,12 @@ class Indexer {
     return new IndexStats(index, indexUpdater.lastUpdate(index));
   }
 
-  removeIndex(Id id) =>
-      indexPersister.removeIndex(id).then((_) => indexUpdater.removeIndex(id));
+  removeIndex(Id id) {
+    _logger.info('Indexer removing index ${id.snake}');
+    return indexPersister
+        .removeIndex(id)
+        .then((_) => indexUpdater.removeIndex(id));
+  }
 
   removeAllIndices() => indexPersister.indices.then((List<Index> indices) {
     _logger.info('Indexer removeAllIndices begin removing ${indices.length}');

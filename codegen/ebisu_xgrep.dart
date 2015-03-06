@@ -24,21 +24,39 @@ void main() {
 A script for indexing directories for the purpose of doing find/greps
 on those indices.
 
-If an index is supplied without other arguments, a list of existing
-indices will be displayed.
+If no arguments are provided, a list of existing indices will be
+displayed.
 
-If index is supplied with any paths it will
-update the index - as in persist it as well as update it.
+If one or more indices is supplied without other arguments, a list of
+files in the index (indices) will be output. Effectively a *find*
+operation.
 
-If an index is supplied with update option , the databases for the
-index will be updated.
+If a single index is supplied with any paths it will be considered an
+index definition and first persist the index and then update it.
 
-If an index is supplied with grep args, a grep on the index will be
-performed.'''
+If one or more indices is supplied with the update option, the
+databases for the index (indices) will be updated (e.g. *updatedb*
+will be called to re-index)
+
+If one or more indices is supplied with one additional argument, that
+argument is the grep pattern and is grepped on all files in all
+specified indices.
+
+If one positional argument is provided without indices or any other
+arguments a the prior search is replacing the grep pattern with the
+positional argument.
+
+'''
+      ..imports = [
+        'package:xgrep/xgrep.dart',
+        'package:id/id.dart',
+        'async',
+      ]
       ..args = [
         scriptArg('index')
         ..doc = 'Id of index associated with command'
         ..type = ArgType.STRING
+        ..isMultiple = true
         ..abbr = 'i',
         scriptArg('path')
         ..doc = '''
@@ -51,21 +69,32 @@ Colon separated fields specifying path with pruning. Fields are:
         ..type = ArgType.STRING
         ..isMultiple = true
         ..abbr = 'p',
-        scriptArg('prune_names')
+        scriptArg('prune_name')
         ..doc = 'Global prune names excluded from all paths'
         ..type = ArgType.STRING
         ..abbr = 'P'
         ..isMultiple = true,
-        scriptArg('prune_paths')
+        scriptArg('prune_path')
         ..doc = 'Fully qualified path existing somewhere within a path to be excluded'
         ..type = ArgType.STRING
         ..abbr = 'X'
         ..isMultiple = true,
         scriptArg('remove_index')
-        ..doc = 'Id of index to remove'
+        ..doc = 'If set will remove any specified indices'
         ..type = ArgType.STRING
         ..abbr = 'r'
-        ..isMultiple = true,
+        ..isFlag = true,
+        scriptArg('remove_all')
+        ..doc = 'Remove all stored indices'
+        ..type = ArgType.STRING
+        ..isFlag = true
+        ..abbr = 'R',
+        scriptArg('list')
+        ..doc = '''
+For any indices provided, list all files. Effectively *find* on the index.'''
+        ..type = ArgType.STRING
+        ..abbr = 'l'
+        ..isFlag = true,
       ]
     ]
     ..testLibraries = [
