@@ -23,12 +23,16 @@ main() {
   }
 
   group('grep', () {
-    test('grep', () {
+    test('grep', () async {
       final indexId = idFromString('test_index');
       final thisDir = dirname(Platform.script.path);
       final srcIndex = new Index(indexId, [thisDir]);
+
+      await Indexer.withIndexer((Indexer indexer) =>
+          indexer.updateIndex(srcIndex));
+
       final grepArgs = new GrepArgs(['foo']);
-      grep(grepArgs, indexId);
+      await grep(srcIndex.id, grepArgs);
     });
   });
 

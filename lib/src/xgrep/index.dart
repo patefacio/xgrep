@@ -1,5 +1,7 @@
 part of xgrep.xgrep;
 
+/// Comparable to *prune* flags on *updatedb* linux command.
+///
 class PruneSpec {
   const PruneSpec(this.names, this.paths);
 
@@ -10,7 +12,9 @@ class PruneSpec {
   int get hashCode => hash2(const ListEquality<String>().hash(names),
       const ListEquality<String>().hash(paths));
 
+  /// Directory names (without paths) which should not be included in a path database.
   final List<String> names;
+  /// Fully qualified paths which should not be included in a path database.
   final List<String> paths;
   // custom <class PruneSpec>
   // end <class PruneSpec>
@@ -50,6 +54,9 @@ class FindArgs {
   // end <class FindArgs>
 }
 
+/// Defines a name index which establishes a set of filesystem paths that can be
+/// indexed and later searched.
+///
 class Index {
   bool operator ==(Index other) => identical(this, other) ||
       _id == other._id &&
@@ -60,9 +67,10 @@ class Index {
       const ListEquality<String>().hash(_pruneNames));
 
   Id get id => _id;
-  /// Paths to include in the index with corresponding prunes specific to the path
+  /// Paths to include in the index mapped with any corresponding pruning specific to
+  /// that path
   Map<String, PruneSpec> get paths => _paths;
-  /// Global set of names to prune on all paths
+  /// Global set of names to prune on all paths in this index
   List<String> get pruneNames => _pruneNames;
   // custom <class Index>
 
@@ -123,6 +131,10 @@ class IndexStats {
   // end <class IndexStats>
 }
 
+/// Establishes an interface that persists *Indices* as well as other
+/// meta-data associated with the creation, update, and usage those
+/// *Indices*.
+///
 abstract class IndexPersister {
   // custom <class IndexPersister>
 
@@ -146,16 +158,26 @@ abstract class IndexPersister {
   Future _connectFuture;
 }
 
+/// Establishes an interface that is used to update indices on the
+/// filesystem using some for of indexer like the Linux *updatedb*
+/// command. Also provides support for finding matching files associated
+/// with an index.
 abstract class IndexUpdater {
   // custom <class IndexUpdater>
 
+  /// Trigger an update of the index - for example run a linux *updatedb* on all
+  /// the paths with the appropriate settings
   Future updateIndex(Index index);
-  Future removeIndex(Id id);
-  Future history(Id id);
-  Map dbPaths(Id id);
 
+  /// Remove the index identified by [id]
+  Future removeIndex(Id id);
+
+  /// Use the supplied [index] to perform a query on databases associated with
+  /// the [paths] in the index. The result is a stream of filenames
   Future<Stream<String>> findPaths(Index index,
       [FindArgs findArgs = emptyFindArgs]);
+
+  Future history(Id id);
 
   // end <class IndexUpdater>
 }
@@ -218,6 +240,9 @@ class Indexer {
     });
     await completer.future;
   }
+
+  Future<Stream<String>> findPaths(Index index,
+      [FindArgs findArgs = emptyFindArgs]) => indexUpdater.findPaths(index, findArgs);
 
   Future<Index> lookupIndex(Id id) => indexPersister.lookupIndex(id);
 

@@ -1,5 +1,7 @@
 part of xgrep.xgrep;
 
+/// Default implementation of an [IndexPersister] which stores index
+/// information in *MongoDB*
 class MongoIndexPersister extends IndexPersister {
   String get uri => _uri;
   // custom <class MongoIndexPersister>

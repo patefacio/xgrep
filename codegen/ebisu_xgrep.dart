@@ -42,12 +42,21 @@ void main() {
         part('index')
         ..classes = [
           class_('prune_spec')
+          ..doc = '''
+Comparable to *prune* flags on *updatedb* linux command.
+'''
           ..immutable = true
           ..opEquals = true
           ..jsonSupport = true
           ..members = [
-            member('names')..type = 'List<String>'..classInit = [],
-            member('paths')..type = 'List<String>'..classInit = [],
+            member('names')
+            ..doc = '''
+Directory names (without paths) which should not be included in a path database.'''
+            ..type = 'List<String>'..classInit = [],
+            member('paths')
+            .. doc = '''
+Fully qualified paths which should not be included in a path database.'''
+            ..type = 'List<String>'..classInit = [],
           ],
           class_('find_args')
           ..immutable = true
@@ -56,14 +65,20 @@ void main() {
             member('excludes')..type = 'List<RegExp>'..classInit = [],
           ],
           class_('index')
+          ..doc = '''
+Defines a name index which establishes a set of filesystem paths that can be
+indexed and later searched.
+'''
           ..opEquals = true
           ..members = [
             member('id')..type = 'Id'..access = RO,
             member('paths')
-            ..doc = 'Paths to include in the index with corresponding prunes specific to the path'
+            ..doc = '''
+Paths to include in the index mapped with any corresponding pruning specific to
+that path'''
             ..type = 'Map<String, PruneSpec>'..access = RO,
             member('prune_names')
-            ..doc = 'Global set of names to prune on all paths'
+            ..doc = 'Global set of names to prune on all paths in this index'
             ..type = 'List<String>'
             ..access = RO
           ],
@@ -74,11 +89,21 @@ void main() {
             member('last_update')..type = 'DateTime',
           ],
           class_('index_persister')
+          ..doc = '''
+Establishes an interface that persists *Indices* as well as other
+meta-data associated with the creation, update, and usage those
+*Indices*.
+'''
           ..isAbstract = true
           ..members = [
             member('connect_future')..type = 'Future'..access = IA
           ],
           class_('index_updater')
+          ..doc = '''
+Establishes an interface that is used to update indices on the
+filesystem using some for of indexer like the Linux *updatedb*
+command. Also provides support for finding matching files associated
+with an index.'''
           ..isAbstract = true,
           class_('indexer')
           ..immutable = true
@@ -90,6 +115,9 @@ void main() {
         part('mongo_index_persister')
         ..classes = [
           class_('mongo_index_persister')
+          ..doc = '''
+Default implementation of an [IndexPersister] which stores index
+information in *MongoDB*'''
           ..extend =  'IndexPersister'
           ..members = [
             member('uri')..isFinal = true..access = RO,
@@ -100,6 +128,9 @@ void main() {
         part('mlocate_index_updater')
         ..classes = [
           class_('mlocate_index_updater')
+          ..doc = '''
+Default implementation of an [IndexUpdater] which manages indices with
+Linux *updatedb* and *mlocate*'''
           ..extend = 'IndexUpdater'
         ],
         part('grep')
@@ -110,11 +141,23 @@ void main() {
             member('args')..type = 'List<String>'..classInit = []
           ],
           class_('find_grep')
+          ..doc = '''
+Takes a stream of paths and passes them to *xargs grep*
+'''
           ..immutable = true
           ..members = [
-            member('indexer')..type = 'Indexer',
-            member('index_id')..type = 'Id',
-            member('grep_args')..type = 'GrepArgs',
+            member('index_id')
+            ..doc = '''
+[Id] of index producing the stream of filenames this class consumes
+'''
+            ..type = 'Id',
+            member('found')
+            ..doc = '''
+[Stream] of file paths produced by the query on index to which *grep*
+will be applied'''
+            ..type = 'Stream<String>',
+            member('grep_args')
+            ..type = 'GrepArgs',
           ]
         ],
       ],
