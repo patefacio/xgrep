@@ -195,9 +195,20 @@ class Indexer {
     });
   }
 
-  updateIndex(Index index) => indexPersister
-      .persistIndex(index)
-      .then((_) => indexUpdater.updateIndex(index));
+  updateIndex(Index index) => indexUpdater.updateIndex(index);
+
+  updateIndexById(Id indexId) async {
+    final index = await lookupIndex(indexId);
+    if(index != null) {
+      return updateIndex(index);
+    }
+    _logger.warning('Requested update of unkown index: ${indexId.snake}');
+  }
+
+  saveAndUpdateIndex(Index index) =>
+    indexPersister
+    .persistIndex(index)
+    .then((_) => indexUpdater.updateIndex(index));
 
   IndexStats stats(Id indexId) async {
     final index = await lookupIndex(indexId);

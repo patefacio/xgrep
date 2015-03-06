@@ -13,7 +13,7 @@
 /// If a single index is supplied with any paths it will be considered an
 /// index definition and first persist the index and then update it.
 ///
-/// If one or more indices is supplied with the update option, the
+/// If one or more indices is supplied with the update flag set, the
 /// databases for the index (indices) will be updated (e.g. *updatedb*
 /// will be called to re-index)
 ///
@@ -54,7 +54,7 @@ operation.
 If a single index is supplied with any paths it will be considered an
 index definition and first persist the index and then update it.
 
-If one or more indices is supplied with the update option, the
+If one or more indices is supplied with the update flag set, the
 databases for the index (indices) will be updated (e.g. *updatedb*
 will be called to re-index)
 
@@ -81,6 +81,9 @@ Map _parseArgs(List<String> args) {
   _parser = new ArgParser();
   try {
     /// Fill in expectations of the parser
+    _parser.addFlag('update', help: '''
+If set will update any specified indices
+''', abbr: 'u', defaultsTo: false);
     _parser.addFlag('remove-index', help: '''
 If set will remove any specified indices
 ''', abbr: 'r', defaultsTo: false);
@@ -122,6 +125,7 @@ Fully qualified path existing somewhere within a path to be excluded
     result['path'] = argResults['path'];
     result['prune-name'] = argResults['prune-name'];
     result['prune-path'] = argResults['prune-path'];
+    result['update'] = argResults['update'];
     result['remove-index'] = argResults['remove-index'];
     result['remove-all'] = argResults['remove-all'];
     result['list'] = argResults['list'];
@@ -161,7 +165,7 @@ xgrep -i my_dart \\
 ''');
       } else {
         for (final index in indices) {
-          print(index.id.snake);
+          print('---------- ${index.id.snake} ----------');
           final paths = index.paths;
           paths.keys.forEach((String path) {
             print('  $path');
@@ -186,12 +190,14 @@ xgrep -i my_dart \\
     final pruneNames = options['prune-name'];
     final removeIndex = options['remove-index'];
     final removeAll = options['remove-all'];
+    final update = options['update'];
     print(options);
 
-    _logger.info('${indices.length} indices ${indices}');
-    _logger.info('${paths.length} paths ${paths}');
-    _logger.info('${prunePaths.length} prunePaths ${prunePaths}');
-    _logger.info('${pruneNames.length} pruneNames ${pruneNames}');
+    _logger.info(() =>
+        'indices:$indices, paths:$paths, prunePaths:$prunePaths,'
+        'pruneNames:$pruneNames, removeAll:$removeAll,'
+        'removeIndes:$removeIndex, update:$update'
+                 );
 
     if (!indices.isEmpty) {
       if (indices.length == 1 && !paths.isEmpty) {
@@ -204,23 +210,26 @@ xgrep -i my_dart \\
               ? emptyPruneSpec
               : new PruneSpec([parts.sublist(1)], []);
         }
-        final index = new Index.withPruning(idFromString(indices.first), paths);
-        print('Index to create is $index');
+        final index = new Index.withPruning(idFromString(indices.first), map);
+        Indexer.withIndexer((Indexer indexer) {
+          return indexer.saveAndUpdateIndex(index);
+        });
       } else {
-        if (removeIndex) {
-          if (!positionals.isEmpty) {
-            print('''
-Will not remove indices if additional positional args provided.
-The following args remain $positionals.''');
-            exit(-1);
-          }
-          print('Removing indices $indices');
+        if(update) {
+          positionalsCheck(positionals, '*update*');
+          print('Updating $indices');
           Indexer.withIndexer((Indexer indexer) {
+            final futures = [];
             indices.forEach((String idStr) {
-              final id = idFromString(idStr);
-              indexer.removeIndex(id);
+              futures.add(indexer.updateIndexById(idFromString(idStr)));
             });
+            return Future.wait(futures);
           });
+        } else if (removeIndex) {
+          positionalsCheck(positionals, '*remove*');
+          print('Removing indices $indices');
+          Indexer.withIndexer((Indexer indexer) =>
+              indices.forEach((String idStr) => indexer.removeIndex(idFromString(idStr))));
         } else {
           // Not removing specified indices. Either it is a request to update
           // indices or do a grep. If there is one positional arg that is the
@@ -232,21 +241,24 @@ indices for more than one text pattern, use an egrep style pattern''');
             exit(-1);
           } else if (positionals.length == 1) {
             print('Doing grep of ${positionals.first} on $indices');
+            final futures = [];
+            for (final id in indices) {
+              futures.add(grep(idFromString(id), new GrepArgs([])));
+            }
+            return Future.wait(futures);
           } else {
             print('Doing an update on $indices');
             Indexer.withIndexer((Indexer indexer) {
               final futures = [];
               indices.forEach((String idStr) {
                 final id = idFromString(idStr);
-                futures.add(indexer
-                    .lookupIndex(id)
-                    .then((Index index) {
-                      if(index == null) {
-                        print('Could not find index <$id> - will not update!');
-                      } else {
-                        return indexer.updateIndex(index);
-                      }
-                    }));
+                futures.add(indexer.lookupIndex(id).then((Index index) {
+                  if (index == null) {
+                    print('Could not find index <$id> - will not update!');
+                  } else {
+                    return indexer.updateIndex(index);
+                  }
+                }));
               });
               return Future.wait(futures);
             });
@@ -281,4 +293,14 @@ indices for more than one text pattern, use an egrep style pattern''');
 }
 
 // custom <xgrep global>
+
+positionalsCheck(List<String> positionals, String tag) {
+  if (!positionals.isEmpty) {
+    print('''
+Will not $tag indices if additional positional args provided.
+The following args remain $positionals.''');
+    exit(-1);
+  }
+}
+
 // end <xgrep global>

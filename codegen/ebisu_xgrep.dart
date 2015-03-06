@@ -34,7 +34,7 @@ operation.
 If a single index is supplied with any paths it will be considered an
 index definition and first persist the index and then update it.
 
-If one or more indices is supplied with the update option, the
+If one or more indices is supplied with the update flag set, the
 databases for the index (indices) will be updated (e.g. *updatedb*
 will be called to re-index)
 
@@ -79,6 +79,11 @@ Colon separated fields specifying path with pruning. Fields are:
         ..type = ArgType.STRING
         ..abbr = 'X'
         ..isMultiple = true,
+        scriptArg('update')
+        ..doc = 'If set will update any specified indices'
+        ..type = ArgType.STRING
+        ..abbr = 'u'
+        ..isFlag = true,
         scriptArg('remove_index')
         ..doc = 'If set will remove any specified indices'
         ..type = ArgType.STRING

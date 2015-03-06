@@ -59,7 +59,7 @@ main() {
         await indexer.removeAllIndices();
         var indices = await indexer.indices;
         expect(indices.length, 0);
-        await indexer.updateIndex(index);
+        await indexer.saveAndUpdateIndex(index);
         indices = await indexer.indices;
         await indexer.dumpIndices();
         expect(indices.length, 1);

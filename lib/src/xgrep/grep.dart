@@ -32,6 +32,11 @@ class FindGrep {
 grepWithIndexer(Id indexId, GrepArgs grepArgs, Indexer indexer) {
   final nullTerminator = new String.fromCharCode(0);
   return indexer.lookupIndex(indexId).then((Index index) {
+    if (index == null) {
+      _logger.warning('Skipping grep on *${indexId.snake}* - index not found');
+      return;
+    }
+
     final command = _xargsGrepCommand(grepArgs);
     _logger.info(() => 'Grep running $command');
     return Process.start(command.first, command.sublist(1)).then(
