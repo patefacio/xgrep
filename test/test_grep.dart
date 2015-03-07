@@ -28,14 +28,13 @@ main() {
       final thisDir = dirname(Platform.script.path);
       final srcIndex = new Index(indexId, [thisDir]);
 
+      await Indexer.withIndexer(
+          (Indexer indexer) => indexer.saveAndUpdateIndex(srcIndex));
+
+      await grep(srcIndex.id, ['-e', 'updateIndex']);
+
       await Indexer
-          .withIndexer((Indexer indexer) => indexer.saveAndUpdateIndex(srcIndex));
-
-      await grep(srcIndex.id, ['-e', 'updateIndex'] );
-
-      await Indexer
-      .withIndexer((Indexer indexer) => indexer.removeAllIndices());
-
+          .withIndexer((Indexer indexer) => indexer.removeAllIndices());
     });
   });
 

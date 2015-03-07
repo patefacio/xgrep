@@ -36,9 +36,10 @@ grepWithIndexer(Id indexId, List<String> grepArgs, Indexer indexer) {
         });
       });
 
-      _logger.info(() => 'Grep completed with $matches matches');
-
-      return completer.future;
+      return completer.future.then((var _) {
+        _logger.info(() => 'Grep completed with $matches matches');
+        return _;
+      });
     });
   });
 }
@@ -47,6 +48,6 @@ grep(Id indexId, List<String> grepArgs) => Indexer.withIndexer(
     (Indexer indexer) => grepWithIndexer(indexId, grepArgs, indexer));
 
 _xargsGrepCommand(List<String> grepArgs) =>
-    ['xargs', '-0', 'grep', '-n', '-E',]..addAll(grepArgs);
+    ['xargs', '-0', 'grep', '-s', '-n', '-E',]..addAll(grepArgs);
 
 // end <part grep>

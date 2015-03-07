@@ -21,4 +21,3 @@ main() {
   test_mlocate_index_updater.main();
   test_grep.main();
 }
-

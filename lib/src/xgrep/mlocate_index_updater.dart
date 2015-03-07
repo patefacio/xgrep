@@ -33,7 +33,7 @@ class MlocateIndexUpdater extends IndexUpdater {
 
   mlocateCommand(Index index) {
     final folderPath = path.join(dbPath, index.id.snake);
-    final result = ['mlocate'];
+    final result = ['mlocate', '-L'];
     index.paths.keys.forEach((String key) {
       final mlocateDbPath =
           path.join(folderPath, path.split(key).sublist(1).join('.'));
@@ -64,7 +64,7 @@ class MlocateIndexUpdater extends IndexUpdater {
     }
     if (!pruneSpec.paths.isEmpty) {
       result
-        ..add('-n')
+        ..add('-e')
         ..add(pruneSpec.paths.join(' '));
     }
     return result;
@@ -97,8 +97,8 @@ class MlocateIndexUpdater extends IndexUpdater {
     final dir = indexDbDir(indexId);
     _logger.info('Removing directory $dir');
     return new Directory(dir)
-      .delete(recursive: true)
-      .catchError((e) => _logger.warning('Failed to delete $dir:$e'));
+        .delete(recursive: true)
+        .catchError((e) => _logger.warning('Failed to delete $dir:$e'));
   }
 
   _createDbPath(Id indexId) {

@@ -1,5 +1,5 @@
 #!/usr/bin/env dart
-/// 
+///
 /// xargs.dart [OPTIONS] [PATTERN...]
 ///
 /// A script for indexing directories for the purpose of doing find/greps
@@ -208,7 +208,7 @@ main(List<String> args) {
   List positionals = argResults['rest'];
 
   // custom <xgrep main>
-  //Logger.root.level = Level.OFF;
+  Logger.root.level = Level.OFF;
   if (args.isEmpty) {
     print('**** Current Indices ****');
     Indexer.withIndexer((Indexer indexer) async {
@@ -252,7 +252,6 @@ xgrep -i my_dart \\
     final list = options['list'];
     final update = options['update'];
     final grepArgs = options['grep-args'];
-    print(options);
 
     _logger.info(() => 'indices:$indices, paths:$paths, prunePaths:$prunePaths,'
         'pruneNames:$pruneNames, removeAll:$removeAll, list:$list,'
@@ -267,7 +266,7 @@ xgrep -i my_dart \\
           assert(!parts.isEmpty);
           map[parts.first] = (parts.length == 1)
               ? emptyPruneSpec
-              : new PruneSpec([parts.sublist(1)], []);
+              : new PruneSpec(parts.sublist(1), []);
         }
         final index = new Index.withPruning(idFromString(indices.first), map);
         Indexer.withIndexer((Indexer indexer) {
@@ -304,7 +303,7 @@ xgrep -i my_dart \\
           // indices or do a grep. If there is one positional arg that is the
           // grep arg, otherwise, it is an update
           if (!positionals.isEmpty || !grepArgs.isEmpty) {
-            print(
+            _logger.info(
                 'Doing grep of ${positionals.first} on $indices with args $grepArgs');
             final futures = [];
             positionals.forEach((String positional) => grepArgs.addAll(['-e', positional]));
@@ -364,4 +363,3 @@ The following args remain $positionals.''');
 }
 
 // end <xgrep global>
-

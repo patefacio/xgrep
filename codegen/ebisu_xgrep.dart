@@ -11,7 +11,8 @@ void main() {
 
   String here = path.absolute(Platform.script.path);
   final topDir = path.dirname(path.dirname(here));
-  //useDartFormatter = true;
+  useDartFormatter = true;
+  formatPrunes = [ new RegExp(r'/bin/xgrep.dart\b') ];
   System ebisu = system('xgrep')
     ..includeHop = true
     ..license = 'boost'
