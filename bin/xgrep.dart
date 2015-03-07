@@ -208,7 +208,7 @@ main(List<String> args) {
   List positionals = argResults['rest'];
 
   // custom <xgrep main>
-  Logger.root.level = Level.OFF;
+  Logger.root.level = Level.INFO;
   if (args.isEmpty) {
     print('**** Current Indices ****');
     Indexer.withIndexer((Indexer indexer) async {
@@ -268,67 +268,78 @@ xgrep -i my_dart \\
               ? emptyPruneSpec
               : new PruneSpec(parts.sublist(1), []);
         }
-        final index = new Index.withPruning(idFromString(indices.first), map);
+        final index = new Index
+          .withPruning(idFromString(indices.first), map);
         Indexer.withIndexer((Indexer indexer) {
+          print('Creating/updating ${index.id.snake}');
           return indexer.saveAndUpdateIndex(index);
         });
       } else {
-        if (update) {
-          positionalsCheck(positionals, '*update*');
-          print('Updating $indices');
-          Indexer.withIndexer((Indexer indexer) {
-            final futures = [];
-            indices.forEach((String idStr) {
-              futures.add(indexer.updateIndexById(idFromString(idStr)));
-            });
-            return Future.wait(futures);
-          });
-        } else if(list) {
-          Indexer.withIndexer((Indexer indexer) {
-            final futures = [];
-            indices.forEach((String idStr) =>
-              futures.add(indexer.lookupIndex(idFromString(idStr))
-                  .then((Index index) =>
-                      (index != null? indexer.processPaths(index, (String path) => print(path)) : index))));
-            print('Futures => $futures');
-            return Future.wait(futures);
-          });
-        } else if (removeIndex) {
-          positionalsCheck(positionals, '*remove*');
-          print('Removing indices $indices');
-          Indexer.withIndexer((Indexer indexer) => indices.forEach(
-              (String idStr) => indexer.removeIndex(idFromString(idStr))));
-        } else {
-          // Not removing specified indices. Either it is a request to update
-          // indices or do a grep. If there is one positional arg that is the
-          // grep arg, otherwise, it is an update
-          if (!positionals.isEmpty || !grepArgs.isEmpty) {
-            _logger.info(
-                'Doing grep of ${positionals.first} on $indices with args $grepArgs');
-            final futures = [];
-            positionals.forEach((String positional) => grepArgs.addAll(['-e', positional]));
-            for (final id in indices) {
-              futures.add(grep(idFromString(id), grepArgs));
-            }
-            return Future.wait(futures);
-          } else {
-            print('Doing an update on $indices');
-            Indexer.withIndexer((Indexer indexer) {
-              final futures = [];
-              indices.forEach((String idStr) {
-                final id = idFromString(idStr);
-                futures.add(indexer.lookupIndex(id).then((Index index) {
-                  if (index == null) {
-                    print('Could not find index <$id> - will not update!');
-                  } else {
-                    return indexer.updateIndex(index);
-                  }
-                }));
-              });
-              return Future.wait(futures);
-            });
+
+        final snakeCharsRe = new RegExp(r'^[\w_]+$');
+        final isSnake = (s) => snakeCharsRe.hasMatch(s);
+        isMatch(String s, Id id) =>
+          isSnake(s)? (s == id.snake) : id.snake.contains(new RegExp(s));
+
+        Indexer.withIndexer((Indexer indexer) async {
+          final indicesAvailable = (await indexer.indices);
+          final matchingIndices = indicesAvailable
+          .where((Index index) =>
+              indices.any((String s) => isMatch(s, index.id)))
+          .toList();
+
+          if(matchingIndices.isEmpty) {
+            print('''
+Could find no matching indexes on $indices
+Available indices: ${indicesAvailable.map((Index index) => index.id.snake).toList()}
+''');
+            exit(-1);
           }
-        }
+
+          if (update) {
+            positionalsCheck(positionals, '*update*');
+            print('Updating $indices');
+            final futures = [];
+            matchingIndices.forEach((Index index) =>
+                futures.add(indexer.updateIndex(index)));
+            return Future.wait(futures);
+          } else if(list) {
+            final futures = [];
+            matchingIndices.forEach((Index index) =>
+                futures.add(indexer.processPaths(index, (path) => print(path))));
+            return Future.wait(futures);
+          } else if (removeIndex) {
+            positionalsCheck(positionals, '*remove*');
+            final futures = [];
+            //// TODO: Figure why adding async screws this up
+            matchingIndices.forEach((Index index) {
+              print('Removing index ${index.id.snake}');
+              futures.add(indexer.removeIndex(index.id));
+            });
+            await Future.wait(futures);
+          } else {
+            // Not removing specified indices. Either it is a request to update
+            // indices or do a grep. If there is one positional arg that is the
+            // grep arg, otherwise, it is an update
+            if (!positionals.isEmpty || !grepArgs.isEmpty) {
+              _logger.info('Doing grep of ${positionals.first} on '
+                  '$matchingIndices with args $grepArgs');
+
+              positionals
+                .forEach((String positional) => grepArgs.addAll(['-e', positional]));
+
+              return grepWithIndexer(matchingIndices, grepArgs, indexer);
+              // matchingIndices.forEach((Index index) =>
+              //     futures.add(grepWithIndexer(index.id, grepArgs, indexer)));
+            } else {
+              print('Doing an update on $indices');
+              final futures = [];
+              matchingIndices.forEach((Index index) =>
+                  futures.add(indexer.updateIndex(index)));
+              return Future.wait(futures);
+            }
+          }
+        });
       }
     } else {
       if (removeAll) {

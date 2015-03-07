@@ -17,7 +17,8 @@ void main(List<String> args) {
     "test/test_index.dart",
     "test/test_mongo_index_persister.dart",
     "test/test_mlocate_index_updater.dart",
-    "test/test_grep.dart"
+    "test/test_grep.dart",
+    "test/test_xgrep_script.dart"
   ]));
 
   runHop(args);
