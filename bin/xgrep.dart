@@ -1,5 +1,5 @@
 #!/usr/bin/env dart
-///
+/// 
 /// xargs.dart [OPTIONS] [PATTERN...]
 ///
 /// A script for indexing directories for the purpose of doing find/greps
@@ -208,7 +208,7 @@ main(List<String> args) {
   List positionals = argResults['rest'];
 
   // custom <xgrep main>
-  Logger.root.level = Level.INFO;
+  Logger.root.level = Level.OFF;
   if (args.isEmpty) {
     print('**** Current Indices ****');
     Indexer.withIndexer((Indexer indexer) async {
@@ -223,23 +223,7 @@ xgrep -i my_dart \\
    -p \$HOME/dev/open_source/ebisu:.pub:.git
 ''');
       } else {
-        for (final index in indices) {
-          print('---------- ${index.id.snake} ----------');
-          final paths = index.paths;
-          paths.keys.forEach((String path) {
-            print('  $path');
-            final pruneSpec = index.paths[path];
-            pruneSpec.names.forEach((String pruneName) {
-              print('    prune:$pruneName');
-            });
-            pruneSpec.paths.forEach((String prunePath) {
-              print('    prune:$prunePath');
-            });
-          });
-          index.pruneNames.forEach((String pruneName) {
-            print('  prune:$pruneName');
-          });
-        }
+        indices.forEach(printIndex);
       }
     });
   } else {
@@ -272,6 +256,7 @@ xgrep -i my_dart \\
           .withPruning(idFromString(indices.first), map);
         Indexer.withIndexer((Indexer indexer) {
           print('Creating/updating ${index.id.snake}');
+          printIndex(index);
           return indexer.saveAndUpdateIndex(index);
         });
       } else {
@@ -373,4 +358,23 @@ The following args remain $positionals.''');
   }
 }
 
+printIndex(Index index) {
+  print('---------- ${index.id.snake} ----------');
+  final paths = index.paths;
+  paths.keys.forEach((String path) {
+    print('  $path');
+    final pruneSpec = index.paths[path];
+    pruneSpec.names.forEach((String pruneName) {
+      print('    prune:$pruneName');
+    });
+    pruneSpec.paths.forEach((String prunePath) {
+      print('    prune:$prunePath');
+    });
+  });
+  index.pruneNames.forEach((String pruneName) {
+    print('  prune:$pruneName');
+  });
+}
+
 // end <xgrep global>
+

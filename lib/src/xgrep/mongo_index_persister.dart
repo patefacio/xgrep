@@ -112,9 +112,10 @@ When adding paths provide either:
 
 const defaultUri = "mongodb://127.0.0.1/xgreps";
 
-String _defaultCollectionPrefix =
-  Platform.environment['XGREP_COL_PREFIX'] == null?
-  Platform.environment['USER'] : Platform.environment['XGREP_COL_PREFIX'];
+String _defaultCollectionPrefix = Platform.environment['XGREP_COL_PREFIX'] ==
+        null
+    ? Platform.environment['USER']
+    : Platform.environment['XGREP_COL_PREFIX'];
 set defaultCollectionPrefix(String str) => _defaultCollectionPrefix = str;
 get defaultCollectionPrefix => _defaultCollectionPrefix;
 

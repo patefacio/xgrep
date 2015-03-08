@@ -115,7 +115,6 @@ For any indices provided, list all files. Effectively *find* on the index.'''
       ..includeLogger = true,
       library('test_mlocate_index_updater')
       ..includeLogger = true,
-      library('test_grep'),
       library('test_xgrep_script'),
     ]
     ..libraries = [
@@ -231,5 +230,4 @@ Linux *updatedb* and *mlocate*'''
     ];
 
   ebisu.generate();
-
 }

@@ -61,7 +61,6 @@ main() {
         expect(indices.length, 0);
         await indexer.saveAndUpdateIndex(index);
         indices = await indexer.indices;
-        await indexer.dumpIndices();
         expect(indices.length, 1);
         final readIndex = await indexer.lookupIndex(index.id);
         expect(readIndex, index);

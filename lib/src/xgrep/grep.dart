@@ -46,11 +46,6 @@ grepWithIndexer(List<Index> indices, List<String> grepArgs, Indexer indexer) {
   });
 }
 
-grep(Id indexId, List<String> grepArgs) => Indexer.withIndexer(
-    (Indexer indexer) => indexer
-        .lookupIndex(indexId)
-        .then((Index index) => grepWithIndexer([index], grepArgs, indexer)));
-
 _xargsGrepCommand(List<String> grepArgs) =>
     ['xargs', '-0', 'grep', '-s', '-n', '-E',]..addAll(grepArgs);
 

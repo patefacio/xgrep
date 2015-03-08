@@ -232,18 +232,6 @@ class Indexer {
     return Future.wait(futures).then((_) => indexPersister.removeAllIndices());
   });
 
-  dumpIndices() async {
-    _logger.info('Dumping indices');
-    await indexPersister.indices.then((List<Index> indices) {
-      _logger.info('Total indices: ${indices.length}');
-      for (final index in indices) {
-        _logger.fine('Dumping index ${index.id}');
-        print('Dumping ${index.id} => $index');
-      }
-    });
-    return true;
-  }
-
   Future<List<Index>> get indices => indexPersister.indices;
 
   Future processPaths(Index index, processor(String)) async {
