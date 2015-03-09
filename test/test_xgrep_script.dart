@@ -72,16 +72,17 @@ main() {
       'test_index',
       '-p',
       '$testFolder'
-    ], ['Creating/updating test_index']);
+    ], ['Created/updated index *test_index*']);
 
     addTest('without args displays index', [], ['--------- test_index']);
 
     addTest('without -h does help', ['-h'], ['-l, --[no-]list']);
 
-    addTest('named -i does update', [
+    addTest('named -i with -u does update', [
       '-i',
-      'test_index'
-    ], ['Doing an update on [test_index]']);
+      'test_index',
+      '-u'
+    ], ['Updated index *test_index*']);
 
     addTest('named -i with -l lists files', [
       '-i',
@@ -100,15 +101,19 @@ main() {
     ], ['test_xgrep_script.dart']);
 
     addTest('named -i with -r removes', ['-i', 't.*', '-r'], [
-      'Removing index test_index'
+      'Removed index *test_index*'
     ]);
 
     addTest('creation honors prune', [
       '-i',
       'test_index',
       '-p',
-      '$rootFolder:prune_test'
-    ], ['Creating/updating test_index', 'prune:prune_test',]);
+      '$rootFolder:prune_test:skip_me'
+    ], [
+      'Created/updated index *test_index*',
+      'prune_name:prune_test',
+      'prune_name:skip_me',
+    ]);
 
     addTest('grep works', ['-i', 'test_index', 'funky_monkey', 'spinal_tap'], [
       new RegExp(r'test_xgrep_script.dart:\d+.*funky_monkey'),
@@ -120,7 +125,7 @@ main() {
       'test_index2',
       '-p',
       binFolder
-    ], ['Creating/updating test_index2']);
+    ], ['Created/updated index *test_index2*']);
 
     addTest('grep looks in multiple indices', [
       '-i',
@@ -140,7 +145,7 @@ main() {
       '-i',
       'test_index.*',
       '-r'
-    ], ['Removing index test_index', 'Removing index test_index2']);
+    ], ['Removed index *test_index*', 'Removed index *test_index2*']);
   });
 
 // end <main>

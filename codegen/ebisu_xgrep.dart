@@ -20,6 +20,7 @@ void main() {
     ..doc = 'Package providing support for advanced find/grep'
     ..scripts = [
       script('xgrep')
+      ..isAsync = true
       ..doc = '''
 
 xargs.dart [OPTIONS] [PATTERN...]
@@ -55,6 +56,36 @@ positional argument.
         'package:id/id.dart',
         'async',
       ]
+      ..classes = [
+        class_('arg_processor')
+        ..doc = '''
+All arguments for processing as a unit.
+'''
+        ..members = [
+          member('args')..type = 'List<String>',
+          member('options')..type = 'Map',
+          member('positionals')..type = 'List<String>',
+          member('index_args')..type = 'List<String>',
+          member('path_args')..type = 'List<String>',
+          member('prune_name_args')..type = 'List<String>',
+          member('prune_path_args')..type = 'List<String>',
+          member('filter_args')..type = 'List<String>',
+          member('immediate_filter_args')..type = 'List<String>',
+
+          // Flags/commands ars
+          member('update_flag')..type = 'bool',
+          member('remove_item_flag')..type = 'bool',
+          member('remove_all_flag')..type = 'bool',
+          member('list_flag')..type = 'bool',
+          member('display_filters_flag')..type = 'bool',
+          member('grep_args')..type = 'List<String>',
+
+          member('indices')..type = 'List<Index>'..access = IA,
+          member('filters')..type = 'List<FilenameFilterSet>'..access = IA,
+          member('path_map')..type = 'Map<String,PruneSpec>'..classInit = {},
+        ]
+
+      ]
       ..args = [
         scriptArg('index')
         ..doc = 'Id of index associated with command'
@@ -63,10 +94,14 @@ positional argument.
         ..abbr = 'i',
         scriptArg('path')
         ..doc = '''
-Colon separated fields specifying path with pruning. Fields are:
+Colon separated fields specifying path with
+pruning. Fields are:
+
  1: The path to include
- 2: One or more path names (i.e. unqualified folder names)
-    to prune
+
+ 2: One or more path names (i.e. unqualified folder
+    names) to prune
+
  e.g. -p /home/gnome/ebisu:cache:.pub:.git
 '''
         ..type = ArgType.STRING
@@ -78,7 +113,10 @@ Colon separated fields specifying path with pruning. Fields are:
         ..abbr = 'P'
         ..isMultiple = true,
         scriptArg('prune_path')
-        ..doc = 'Fully qualified path existing somewhere within a path to be excluded'
+        ..doc = '''
+Fully qualified path existing somewhere within a path
+to be excluded
+'''
         ..type = ArgType.STRING
         ..abbr = 'X'
         ..isMultiple = true,
@@ -87,8 +125,8 @@ Colon separated fields specifying path with pruning. Fields are:
         ..type = ArgType.STRING
         ..abbr = 'u'
         ..isFlag = true,
-        scriptArg('remove_index')
-        ..doc = 'If set will remove any specified indices'
+        scriptArg('remove_item')
+        ..doc = 'If set will remove any specified indices (-i) or filters (-f)'
         ..type = ArgType.STRING
         ..abbr = 'r'
         ..isFlag = true,
@@ -99,10 +137,70 @@ Colon separated fields specifying path with pruning. Fields are:
         ..abbr = 'R',
         scriptArg('list')
         ..doc = '''
-For any indices provided, list all files. Effectively *find* on the index.'''
-        ..type = ArgType.STRING
+For any indices or filters provided, list associated items. For indices
+it lists all files, for filters lists the details.
+Effectively *find* on the index and print on filter.'''
         ..abbr = 'l'
         ..isFlag = true,
+        scriptArg('display_filters')
+        ..doc = 'Display all persisted filters'
+        ..isFlag = true,
+        scriptArg('filter')
+        ..doc = r"""
+Specifies a filter. If the argument is a single
+identifier it must repsent a filter stored in the
+database, to be used in the find/grep operation.
+
+If the argument more than just an identifier it is
+considered a filter definition and must be of the
+form:
+
+  filter_identifier;inclusions;exclusions
+
+Both inclusions and exclusions are comma separated
+fields representing patterns to include/exclude. If a
+pattern has non-word characters (i.e. not [\w_.]) it
+assumed to be a regex and the filtering is matched
+case insensitively. Otherwise the field is a string
+and is matched exactly.
+
+Examples:
+
+-f 'dart_filter;\.dart$,\.html$,\.yaml$;\.js$,.*~$'
+-f 'cpp_filter;\.(?:hpp|cpp|c|h|inl|cxx)$;'
+
+The first extablishes a filter named *dart_filter*
+that includes dart, html and yaml files and excludes
+js and tilda files.
+
+-i my_oss -f dart_filter -f cpp_filter join split
+
+These flags will search index *my_oss* filtering to
+*dart_filter* and *cpp_filter* looking for the words
+*join* and *split*
+"""
+        ..type = ArgType.STRING
+        ..abbr = 'f'
+        ..isMultiple = true,
+        scriptArg('immediate_filter')
+        ..doc = r"""
+Use the filter specified to restrict files searched
+The format must be two fields separated by a single
+semicolon where each field represents a pattern:
+
+-F'\.(?:hpp|cpp|c|h|inl|cxx)$;'
+-F';\.(?:\.obj|\.a)'
+
+The first says to *include* some c++ type files and leaves
+the *exclude* field blank. The second says to exclude
+.obj and .a files See [create_filter] option
+for more on how the patterns are interpreted. Note:
+the use of semicolon prevents collisions with group
+regex expressions.
+"""
+        ..type = ArgType.STRING
+        ..isMultiple = true
+        ..abbr = 'F',
         scriptArg('grep_args')
         ..doc = 'Arguments passed directly to grep'
         ..abbr = 'g'
@@ -133,6 +231,30 @@ For any indices provided, list all files. Effectively *find* on the index.'''
       ..parts = [
         part('index')
         ..classes = [
+          class_('filename_filter_set')
+          ..doc = r"""
+List of regex filters for inclusion/exclusion of
+files on find operation.
+
+So the following:
+
+    FilenameFilterSet([ '\.dart$', '\.yaml$' ], [ '\.js$' ])
+
+would include *dart* and *yaml* files and exclude
+javascript *files*
+"""
+          ..opEquals = true
+          ..members = ([
+            member('id')
+            ..doc = 'Uniquely identifies the filter set'
+            ..type = 'Id',
+            member('include')
+            ..doc = 'List of string patterns interpreted as RegExp to *include*'
+            ..type = 'List<String>',
+            member('exclude')
+            ..doc = 'List of string patterns interpreted as RegExp to *exclude*'
+            ..type = 'List<String>',
+          ].map((m) => m..access = RO)).toList(),
           class_('prune_spec')
           ..doc = '''
 Comparable to *prune* flags on *updatedb* linux command.
@@ -215,6 +337,7 @@ information in *MongoDB*'''
             member('uri')..isFinal = true..access = RO,
             member('db')..access = IA..type = 'Db',
             member('indices')..access = IA..type = 'DbCollection',
+            member('filter_sets')..access = IA..type = 'DbCollection',
           ]
         ],
         part('mlocate_index_updater')

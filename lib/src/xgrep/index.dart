@@ -1,5 +1,71 @@
 part of xgrep.xgrep;
 
+/// List of regex filters for inclusion/exclusion of
+/// files on find operation.
+///
+/// So the following:
+///
+///     FilenameFilterSet([ '\.dart$', '\.yaml$' ], [ '\.js$' ])
+///
+/// would include *dart* and *yaml* files and exclude
+/// javascript *files*
+///
+class FilenameFilterSet {
+  bool operator ==(FilenameFilterSet other) => identical(this, other) ||
+      _id == other._id &&
+          const ListEquality().equals(_include, other._include) &&
+          const ListEquality().equals(_exclude, other._exclude);
+
+  int get hashCode => hash3(_id, const ListEquality<String>().hash(_include),
+      const ListEquality<String>().hash(_exclude));
+
+  /// Uniquely identifies the filter set
+  Id get id => _id;
+  /// List of string patterns interpreted as RegExp to *include*
+  List<String> get include => _include;
+  /// List of string patterns interpreted as RegExp to *exclude*
+  List<String> get exclude => _exclude;
+  // custom <class FilenameFilterSet>
+
+  static final _notRegexRe = new RegExp(r'^[\w_.]+$');
+
+  static interpret(String s) => _notRegexRe.hasMatch(s) ? s : new RegExp(s);
+
+  FilenameFilterSet(this._id, this._include, this._exclude);
+
+  FilenameFilterSet._default();
+
+  Map toJson() => {
+    "_id": id.snake,
+    "include": ebisu_utils.toJson(include),
+    "exclude": ebisu_utils.toJson(exclude),
+  };
+
+  static FilenameFilterSet fromJson(Object json) {
+    if (json == null) return null;
+    if (json is String) {
+      json = convert.JSON.decode(json);
+    }
+    assert(json is Map);
+    return new FilenameFilterSet._default().._fromJsonMapImpl(json);
+  }
+
+  void _fromJsonMapImpl(Map jsonMap) {
+    _id = idFromString(jsonMap["_id"]);
+    // include is List<String>
+    _include = ebisu_utils.constructListFromJsonData(
+        jsonMap["include"], (data) => data);
+    // exclude is List<String>
+    _exclude = ebisu_utils.constructListFromJsonData(
+        jsonMap["exclude"], (data) => data);
+  }
+
+  // end <class FilenameFilterSet>
+  Id _id;
+  List<String> _include;
+  List<String> _exclude;
+}
+
 /// Comparable to *prune* flags on *updatedb* linux command.
 ///
 class PruneSpec {
@@ -154,6 +220,11 @@ abstract class IndexPersister {
   Future removeAllIndices();
   Future removeIndex(Id id);
 
+  Future<List<FilenameFilterSet>> get filenameFilterSets;
+  Future persistFilenameFilterSet(FilenameFilterSet set);
+  Future removeFilenameFilterSet(Id setId);
+  Future removeAllFilenameFilterSets();
+
   // end <class IndexPersister>
   Future _connectFuture;
 }
@@ -248,12 +319,24 @@ class Indexer {
       indexUpdater.findPaths(index, findArgs);
 
   Future<Index> lookupIndex(Id id) => indexPersister.lookupIndex(id);
+  Future<List<FilenameFilterSet>> get filenameFilterSets =>
+      indexPersister.filenameFilterSets;
+  Future persistFilenameFilterSet(FilenameFilterSet set) =>
+      indexPersister.persistFilenameFilterSet(set);
+  Future removeFilenameFilterSet(Id setId) =>
+      indexPersister.removeFilenameFilterSet(setId);
+
+  Future removeAllFilenameFilterSets() =>
+    indexPersister.removeAllFilenameFilterSets();
+
+  Future removeAllItems() =>
+    removeAllIndices().then((_) => removeAllFilenameFilterSets());
 
   // end <class Indexer>
 }
 // custom <part index>
 
-const commonPruneNames = const ['.svn', '.gitignore', '.git', '.pub'];
+const commonPruneNames = const ['.svn', '.git', '.pub'];
 const emptyPruneSpec = const PruneSpec(const [], const []);
 const emptyFindArgs = const FindArgs(const [], const []);
 
