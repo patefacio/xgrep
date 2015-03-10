@@ -6,10 +6,11 @@ class MongoIndexPersister extends IndexPersister {
   String get uri => _uri;
   // custom <class MongoIndexPersister>
 
-  MongoIndexPersister([String uri = defaultUri]) : _uri = uri;
+  MongoIndexPersister([String uri]) : _uri = (uri==null)? _mongoUri : uri;
 
   static Future withIndexPersister(Future callback(IndexPersister),
-      [String uri = defaultUri]) async {
+      [String uri]) async {
+    if(uri == null) uri = _mongoUri;
     final indexPersister = new MongoIndexPersister(uri);
     try {
       final persister = await indexPersister.connectFuture;
@@ -143,6 +144,9 @@ When adding paths provide either:
 // custom <part mongo_index_persister>
 
 const defaultUri = "mongodb://127.0.0.1/xgreps";
+
+final _mongoUri = Platform.environment['XGREP_MONGO_URI'] == null?
+  defaultUri : Platform.environment['XGREP_MONGO_URI'];
 
 String _defaultCollectionPrefix = Platform.environment['XGREP_COL_PREFIX'] ==
         null

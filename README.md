@@ -3,7 +3,7 @@
 A library and script for linux users that combines indexing
 directories, specifying filter sets, and grepping of
 files. Essentially it helps the user not have to remember the details
-of *find | xargs grep...*
+of and path inputs for *find | xargs grep...*
 
 Are you a graybeard whose memory is not what it used to be?
 
@@ -30,14 +30,21 @@ The following is the intent:
 * Provide the *find|grep* equivalent combo in single script with less
   to remember
 
-* Provide generation of $HOME/.xgrep.el for easy access to grepping
-  commands from emacs
+* Provide generation of $HOME/.xgrep.el for easy access to your
+  grepping commands from emacs
 
 # Prereqs/Notes
 
 This uses MongoDB for the persistence of indices and filters.  It uses
 updatedb/mlocate for the creation/search of directories. The databases
-are stored in $HOME/xgreps/...
+are stored in **$HOME/xgreps/...**
+
+The default MongoDB uri is "mongodb://127.0.0.1/xgreps". You can
+override this by setting the XGREP_MONGO_URI environment
+variable.
+
+If the -e option is used the file **$HOME/.xgreps.el** is written
+
 
 # Examples
 
@@ -66,6 +73,16 @@ are stored in $HOME/xgreps/...
   the named indices can be queried with pattern
 
         xgrep -i.* split join
+
+  giving:
+
+        .../ebisu_utils.dart:152:    result.add(guts.join(',\n'));
+        .../ebisu_utils.dart:163:    result.add(guts.join(',\n'));
+        ...
+        .../ebisu_cpp.dart:448:template< ${decls.join(',\n          ')} >''';
+        .../ebisu_cpp.dart:672:  return result.join('');
+        .../ebisu_cpp.dart:676:    original.split('\n').map((l) => '"$l\\n"').join('\n');
+
 
 * Similarly update all indices
 

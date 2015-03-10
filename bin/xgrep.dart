@@ -238,6 +238,12 @@ regex expressions.
     _parser.addOption('grep-args', help: r'''
 Arguments passed directly to grep
 ''', defaultsTo: null, allowMultiple: true, abbr: 'g', allowed: null);
+    _parser.addOption('log-level', help: r'''
+Select log level from:
+[ all, config, fine, finer, finest, info, levels,
+  off, severe, shout, warning ]
+
+''', defaultsTo: null, allowMultiple: false, abbr: null, allowed: null);
 
     /// Parse the command line options (excluding the script)
     argResults = _parser.parse(args);
@@ -259,6 +265,25 @@ Arguments passed directly to grep
     result['immediate-filter'] = argResults['immediate-filter'];
     result['grep-args'] = argResults['grep-args'];
     result['help'] = argResults['help'];
+    result['log-level'] = argResults['log-level'];
+
+    if (result['log-level'] != null) {
+      const choices = const {
+        'all': Level.ALL,
+        'config': Level.CONFIG,
+        'fine': Level.FINE,
+        'finer': Level.FINER,
+        'finest': Level.FINEST,
+        'info': Level.INFO,
+        'levels': Level.LEVELS,
+        'off': Level.OFF,
+        'severe': Level.SEVERE,
+        'shout': Level.SHOUT,
+        'warning': Level.WARNING
+      };
+      final selection = choices[result['log-level'].toLowerCase()];
+      if (selection != null) Logger.root.level = selection;
+    }
 
     return {'options': result, 'rest': argResults.rest};
   } catch (e) {
@@ -338,13 +363,15 @@ emacsSupportFlag: $emacsSupportFlag
 
   process() => Indexer.withIndexer((Indexer indexer) async {
     _logger.info('${new DateTime.now()}: Processing $args');
-    if (args.isEmpty) {
+
+    if (emacsSupportFlag) {
+      await updateEmacsFile(indexer);
+    }
+
+    if (!hasIndices && !hasFilters && positionals.isEmpty) {
       await printIndices(indexer);
       await printFilters(indexer);
     } else {
-      if (emacsSupportFlag) {
-        await updateEmacsFile(indexer);
-      }
 
       createNewFilters(indexer);
 
@@ -414,12 +441,6 @@ emacsSupportFlag: $emacsSupportFlag
         filterArgs.addAll(['-f', id.snake]);
       });
     }
-
-    print('''
-Post filter: $filterArgs
-Creates: $creationFilters
-positionals: $positionals
-''');
   }
 
   createIndex(indexer) async {
@@ -528,13 +549,12 @@ remove-item requires -i and/or -f specifying named items to remove''');
   updateEmacsFile(Indexer indexer) async {
     final theIndices = (await indexer.indices);
     List parts = [
-'''
+      '''
 (defun xgu-* ()
   "Update all xgrep indices"
   (interactive)
   (shell-command "xgrep -i.* -u" "update all xgrep indices"))
 ''',
-
     ];
     for (final index in theIndices) {
       final snakeId = index.id.snake;
@@ -563,7 +583,7 @@ remove-item requires -i and/or -f specifying named items to remove''');
     }
     final efile = join(Platform.environment['HOME'], '.xgrep.el');
     new File(efile).writeAsStringSync(parts.join('\n'));
-    _logger.info('Wrote $efile');
+    print('Wrote $efile');
   }
 
   exitWith(String err) {
@@ -605,13 +625,13 @@ xgrep -i my_dart \\
 main(List<String> args) async {
   Logger.root.onRecord.listen(
       (LogRecord r) => print("${r.loggerName} [${r.level}]:\t${r.message}"));
-  Logger.root.level = Level.INFO;
+  Logger.root.level = Level.OFF;
   Map argResults = _parseArgs(args);
   Map options = argResults['options'];
   List positionals = argResults['rest'];
 
   // custom <xgrep main>
-  Logger.root.level = Level.INFO;
+
   final argProcessor = new ArgProcessor(args, options, positionals);
   await argProcessor.process();
   // end <xgrep main>
