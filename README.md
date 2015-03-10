@@ -1,5 +1,7 @@
 # Xgrep
 
+[![Build Status](https://drone.io/github.com/patefacio/xgrep/status.png)](https://drone.io/github.com/patefacio/xgrep/latest)
+
 A library and script for linux users that combines indexing
 directories, specifying filter sets, and grepping of
 files. Essentially it helps the user not have to remember the details
