@@ -27,8 +27,9 @@ runScriptWithArgsInteractive(List<String> args, [interaction(Process)]) async =>
   return process.exitCode.then((int exitCode) => expect(exitCode, 0));
 });
 
-addTest(testName, scriptArgs, required) => test(testName,
-    () async => await runScriptWithArgs(scriptArgs).then((String output) {
+addTest(testName, scriptArgs, required, [List requiredNot = const []]) => test(
+    testName, () async => await runScriptWithArgs(scriptArgs).then(
+        (String output) {
   if (false) {
     print('--------COMPLETED $testName------');
     print(output);
@@ -37,6 +38,11 @@ addTest(testName, scriptArgs, required) => test(testName,
     final match = output.contains(s);
     if (!match) print('Bogus ====\n$output\n====\nhas no $s');
     expect(match, true);
+  });
+  requiredNot.forEach((var s) {
+    final match = output.contains(s);
+    if (match) print('Bogus ====\n$output\n====\nhas $s');
+    expect(match, false);
   });
 }));
 
@@ -84,11 +90,9 @@ main() {
       '-u'
     ], ['Updated index *test_index*']);
 
-    addTest('named -i with -l lists files', [
-      '-i',
-      'test_index',
-      '-l'
-    ], ['test_xgrep_script.dart']);
+    addTest('named -i with -l lists files', ['-i', 'test_index', '-l'], [
+      'test_xgrep_script.dart'
+    ]);
 
     addTest('named -i bad name', ['-i', 'doesnotexist'], [
       'Could find no matching indexes on [doesnotexist]'
@@ -140,6 +144,35 @@ main() {
       // From test_index2
       new RegExp(r'xgrep.dart:\d+.*print\(.Are you sure'),
     ]);
+
+    addTest('persists filters', [
+      '-f',
+      r'dart \.dart$ \.html$ \.yaml$ @ \.js$ .*~$',
+      '-f',
+      r'cpp \.(?:hpp|cpp|c|h|inl|cxx)$@',
+    ], [
+      'Saved filter *dart*',
+      r'include: JSRegExp: pattern=\.dart$ flags=',
+      r'include: JSRegExp: pattern=\.html$ flags=',
+      'Saved filter *cpp*',
+      r'include: JSRegExp: pattern=\.(?:hpp|cpp|c|h|inl|cxx)$ flags=',
+    ]);
+
+    addTest('pattern filters work', ['-f', '.*'], [
+      r'include: JSRegExp: pattern=\.dart$ flags=',
+      r'include: JSRegExp: pattern=\.html$ flags=',
+      r'include: JSRegExp: pattern=\.(?:hpp|cpp|c|h|inl|cxx)$ flags=',
+    ]);
+
+    addTest('filters actually filter', [
+      '-i',
+      '.*',
+      '-f',
+      'exclude_all @ .*',
+      'class'
+    ], ['Saved filter *exclude_all*',],
+        /// Should have no hits since all files have been filtered
+        [':\d+.*class']);
 
     addTest('removal by pattern hits multiple indices', [
       '-i',

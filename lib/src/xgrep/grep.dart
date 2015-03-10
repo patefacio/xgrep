@@ -4,9 +4,12 @@ part of xgrep.xgrep;
 
 final _nullTerminator = new String.fromCharCode(0);
 
-grepWithIndexer(List<Index> indices, List<String> grepArgs, Indexer indexer) {
+grepWithIndexer(List<Index> indices, List<String> grepArgs, Indexer indexer,
+    [List filters = const []]) {
   final command = _xargsGrepCommand(grepArgs);
-  int matches = 0;
+  int filesConsidered = 0;
+  int filesFiltered = 0;
+  int linesMatched = 0;
   _logger.info(() => 'Grep running $command');
 
   return Process
@@ -18,7 +21,7 @@ grepWithIndexer(List<Index> indices, List<String> grepArgs, Indexer indexer) {
         .transform(new Utf8Decoder())
         .transform(new LineSplitter())
         .listen((String line) {
-      matches++;
+      linesMatched++;
       print(line);
     });
 
@@ -27,8 +30,14 @@ grepWithIndexer(List<Index> indices, List<String> grepArgs, Indexer indexer) {
       final completer = new Completer<Id>();
 
       futures.add(indexer.findPaths(index).then((Stream stream) => stream
-          .map((path) => path + _nullTerminator)
-          .listen((String s) => process.stdin.write(s), onDone: () {
+          .where((String path) {
+        if (FileSystemEntity.isDirectorySync(path)) return false;
+        filesConsidered++;
+        final skipped = filters.any((filter) => filter.excludePath(path));
+        if (skipped) filesFiltered++;
+        return !skipped;
+      }).map((path) => path + _nullTerminator).listen(
+          (String s) => process.stdin.write(s), onDone: () {
         _logger.fine('Finished find on ${index.id}');
         completer.complete(index.id);
       })));
@@ -41,7 +50,9 @@ grepWithIndexer(List<Index> indices, List<String> grepArgs, Indexer indexer) {
       process.stdin.close();
     }).then((_) => process.exitCode);
   }).then((int exitCode) {
-    _logger.info(() => 'Grep completed ($exitCode) with $matches matches');
+    _logger.info(() => 'Grep completed ($exitCode): '
+        '$filesConsidered files considered, $filesFiltered filtered, '
+        '$linesMatched linesMatched');
     return exitCode;
   });
 }

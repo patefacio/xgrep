@@ -12,7 +12,6 @@ void main() {
   String here = path.absolute(Platform.script.path);
   final topDir = path.dirname(path.dirname(here));
   useDartFormatter = true;
-  formatPrunes = [ new RegExp(r'/bin/xgrep.dart\b') ];
   System ebisu = system('xgrep')
     ..includeHop = true
     ..license = 'boost'
@@ -21,36 +20,61 @@ void main() {
     ..scripts = [
       script('xgrep')
       ..isAsync = true
-      ..doc = '''
+      ..doc = r"""
+A script for indexing directories and running find/grep operations
+on those indices. All indices and filters are named and stored in
+a database so they may be reused. Names of indices must be
+*snake_case*, eg (-i cpp_code) and (-f ignore_objs).
 
 xargs.dart [OPTIONS] [PATTERN...]
 
-A script for indexing directories for the purpose of doing find/greps
-on those indices.
+If no arguments are provided, a list of existing indices and filters
+with their descriptions will be displayed.
 
-If no arguments are provided, a list of existing indices will be
-displayed.
+If one or more indices or filters is supplied without other arguments
+those item descriptions will be displayed.
 
-If one or more indices is supplied without other arguments, a list of
-files in the index (indices) will be output. Effectively a *find*
-operation.
+# Index Creation
 
-If a single index is supplied with any paths it will be considered an
-index definition and first persist the index and then update it.
+To create an index, provide a single -i argument and one or more path
+arguments, with optional prune arguments. See [--path],
+[--prune-name] options. Note: When an index is created its definition is
+persisted and the actual index is created - (e.g. updatedb will run
+creating an index database)
+
+# Filter Creation
+
+To create a filter, use the filter option (i.e. -f) and define the
+filter in-place with the following format:
+
+ -f'index_id [string_or_regex ... ] @ [string_or_regex ... ]'
+
+Where the first [string_or_regex ...] is a space delimiited list
+of string or regexes defining an inclusion filter. Similarly, the
+second [strng_or_regex ...] is a space delimited list of string
+or regexes defining an exclusion filter.
+
+For example:
+
+ -f'dart \.dart$ \.html$ \.yaml$ @ \.js$ .*~$'
+
+persists a new filter named *dart* that includes *.dart*,
+*.html* and *.yaml* files, but exludes *.js* and tilda files.
 
 If one or more indices is supplied with the update flag set, the
-databases for the index (indices) will be updated (e.g. *updatedb*
+databases for the index/indices will be updated (e.g. *updatedb*
 will be called to re-index)
 
-If one or more indices is supplied with one additional argument, that
-argument is the grep pattern and is grepped on all files in all
-specified indices.
+If one or more indices is supplied with zero or more filter arguments
+and one or more remaining positional arguments, the positional
+arguments become grep patterns and the command performs a grep against
+all files files matching the indices with any filters applied.
 
+TODO:
 If one positional argument is provided without indices or any other
 arguments a the prior search is replacing the grep pattern with the
 positional argument.
-
-'''
+"""
       ..imports = [
         'package:xgrep/xgrep.dart',
         'package:id/id.dart',
@@ -137,9 +161,10 @@ to be excluded
         ..abbr = 'R',
         scriptArg('list')
         ..doc = '''
-For any indices or filters provided, list associated items. For indices
-it lists all files, for filters lists the details.
-Effectively *find* on the index and print on filter.'''
+For any indices or filters provided, list associated
+items. For indices it lists all files, for filters
+lists the details.  Effectively *find* on the index
+and print on filter.'''
         ..abbr = 'l'
         ..isFlag = true,
         scriptArg('display_filters')
@@ -151,27 +176,27 @@ Specifies a filter. If the argument is a single
 identifier it must repsent a filter stored in the
 database, to be used in the find/grep operation.
 
-If the argument more than just an identifier it is
+If the argument is more than just an identifier it is
 considered a filter definition and must be of the
 form:
 
-  filter_identifier;inclusions;exclusions
+ filter_id [ str_or_regex ...] @  [ str_or_regex ...]
 
-Both inclusions and exclusions are comma separated
+Both inclusions and exclusions are space separated
 fields representing patterns to include/exclude. If a
 pattern has non-word characters (i.e. not [\w_.]) it
-assumed to be a regex and the filtering is matched
+is assumed to be a regex and the filtering is matched
 case insensitively. Otherwise the field is a string
 and is matched exactly.
 
 Examples:
 
--f 'dart_filter;\.dart$,\.html$,\.yaml$;\.js$,.*~$'
--f 'cpp_filter;\.(?:hpp|cpp|c|h|inl|cxx)$;'
+-f 'dart \.dart$ \.html$ \.yaml$ @ \.js$ .*~$'
+-f 'cpp_filter \.(?:hpp|cpp|c|h|inl|cxx)$@'
 
-The first extablishes a filter named *dart_filter*
-that includes dart, html and yaml files and excludes
-js and tilda files.
+The first persists a filter named *dart_filter* that
+includes dart, html and yaml files and excludes js
+and tilda files.
 
 -i my_oss -f dart_filter -f cpp_filter join split
 
@@ -188,12 +213,12 @@ Use the filter specified to restrict files searched
 The format must be two fields separated by a single
 semicolon where each field represents a pattern:
 
--F'\.(?:hpp|cpp|c|h|inl|cxx)$;'
--F';\.(?:\.obj|\.a)'
+-F '\.(?:hpp|cpp|c|h|inl|cxx)$@'
+-F '@\.(?:\.obj|\.a)'
 
-The first says to *include* some c++ type files and leaves
-the *exclude* field blank. The second says to exclude
-.obj and .a files See [create_filter] option
+The first says to *include* some c++ type files and
+leaves the *exclude* field blank. The second says to
+exclude .obj and .a files See [create_filter] option
 for more on how the patterns are interpreted. Note:
 the use of semicolon prevents collisions with group
 regex expressions.

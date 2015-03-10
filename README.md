@@ -9,14 +9,13 @@ to remember the details of *find | xargs grep...*
 
 The following is the intent:
 
-* Allow creation/stroage of common searches in a database.
+* Allow creation/stroage of common directory searches in a database.
 
-* Allow creation of file sets that can be incorporated into a search.
+* Allow creation of file filter sets that can be incorporated into a search.
 
-* Automatically update databases for searches. Default implementation uses updatedb and mlocate.
+* Automatically easy update of databases for searches. Default implementation uses updatedb and mlocate.
 
 * Provide the *find|grep* in single script with less to remember
-
 
 # Examples
 

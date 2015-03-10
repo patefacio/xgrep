@@ -43,16 +43,14 @@ class MlocateIndexUpdater extends IndexUpdater {
     return result;
   }
 
-  Future<Stream<String>> findPaths(Index index,
-      [FindArgs findArgs = emptyFindArgs]) async {
+  Future<Stream<String>> findPaths(Index index) async {
     final command = mlocateCommand(index);
     _logger.info('Running $command');
     final process = await Process.start(command.first, command.sublist(1));
-    final result = process.stdout
+
+    return process.stdout
         .transform(new Utf8Decoder())
         .transform(new LineSplitter());
-
-    return result;
   }
 
   List<String> _pruneArgs(PruneSpec pruneSpec) {

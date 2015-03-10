@@ -131,8 +131,7 @@ When adding paths provide either:
 
   Future removeAllFilenameFilterSets() {
     _logger.info('Removing all filters');
-    return connectFuture.then(
-        (c) => _filterSets.remove({}));
+    return connectFuture.then((c) => _filterSets.remove({}));
   }
 
   // end <class MongoIndexPersister>

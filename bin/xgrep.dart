@@ -1,32 +1,57 @@
 #!/usr/bin/env dart
+/// A script for indexing directories and running find/grep operations
+/// on those indices. All indices and filters are named and stored in
+/// a database so they may be reused. Names of indices must be
+/// *snake_case*, eg (-i cpp_code) and (-f ignore_objs).
 ///
 /// xargs.dart [OPTIONS] [PATTERN...]
 ///
-/// A script for indexing directories for the purpose of doing find/greps
-/// on those indices.
+/// If no arguments are provided, a list of existing indices and filters
+/// with their descriptions will be displayed.
 ///
-/// If no arguments are provided, a list of existing indices will be
-/// displayed.
+/// If one or more indices or filters is supplied without other arguments
+/// those item descriptions will be displayed.
 ///
-/// If one or more indices is supplied without other arguments, a list of
-/// files in the index (indices) will be output. Effectively a *find*
-/// operation.
+/// # Index Creation
 ///
-/// If a single index is supplied with any paths it will be considered an
-/// index definition and first persist the index and then update it.
+/// To create an index, provide a single -i argument and one or more path
+/// arguments, with optional prune arguments. See [--path],
+/// [--prune-name] options. Note: When an index is created its definition is
+/// persisted and the actual index is created - (e.g. updatedb will run
+/// creating an index database)
+///
+/// # Filter Creation
+///
+/// To create a filter, use the filter option (i.e. -f) and define the
+/// filter in-place with the following format:
+///
+///  -f'index_id [string_or_regex ... ] @ [string_or_regex ... ]'
+///
+/// Where the first [string_or_regex ...] is a space delimiited list
+/// of string or regexes defining an inclusion filter. Similarly, the
+/// second [strng_or_regex ...] is a space delimited list of string
+/// or regexes defining an exclusion filter.
+///
+/// For example:
+///
+///  -f'dart \.dart$ \.html$ \.yaml$ @ \.js$ .*~$'
+///
+/// persists a new filter named *dart* that includes *.dart*,
+/// *.html* and *.yaml* files, but exludes *.js* and tilda files.
 ///
 /// If one or more indices is supplied with the update flag set, the
-/// databases for the index (indices) will be updated (e.g. *updatedb*
+/// databases for the index/indices will be updated (e.g. *updatedb*
 /// will be called to re-index)
 ///
-/// If one or more indices is supplied with one additional argument, that
-/// argument is the grep pattern and is grepped on all files in all
-/// specified indices.
+/// If one or more indices is supplied with zero or more filter arguments
+/// and one or more remaining positional arguments, the positional
+/// arguments become grep patterns and the command performs a grep against
+/// all files files matching the indices with any filters applied.
 ///
+/// TODO:
 /// If one positional argument is provided without indices or any other
 /// arguments a the prior search is replacing the grep pattern with the
 /// positional argument.
-///
 ///
 
 import 'dart:async';
@@ -41,35 +66,60 @@ ArgParser _parser;
 
 //! The comment and usage associated with this script
 void _usage() {
-  print('''
+  print(r'''
+A script for indexing directories and running find/grep operations
+on those indices. All indices and filters are named and stored in
+a database so they may be reused. Names of indices must be
+*snake_case*, eg (-i cpp_code) and (-f ignore_objs).
 
 xargs.dart [OPTIONS] [PATTERN...]
 
-A script for indexing directories for the purpose of doing find/greps
-on those indices.
+If no arguments are provided, a list of existing indices and filters
+with their descriptions will be displayed.
 
-If no arguments are provided, a list of existing indices will be
-displayed.
+If one or more indices or filters is supplied without other arguments
+those item descriptions will be displayed.
 
-If one or more indices is supplied without other arguments, a list of
-files in the index (indices) will be output. Effectively a *find*
-operation.
+# Index Creation
 
-If a single index is supplied with any paths it will be considered an
-index definition and first persist the index and then update it.
+To create an index, provide a single -i argument and one or more path
+arguments, with optional prune arguments. See [--path],
+[--prune-name] options. Note: When an index is created its definition is
+persisted and the actual index is created - (e.g. updatedb will run
+creating an index database)
+
+# Filter Creation
+
+To create a filter, use the filter option (i.e. -f) and define the
+filter in-place with the following format:
+
+ -f'index_id [string_or_regex ... ] @ [string_or_regex ... ]'
+
+Where the first [string_or_regex ...] is a space delimiited list
+of string or regexes defining an inclusion filter. Similarly, the
+second [strng_or_regex ...] is a space delimited list of string
+or regexes defining an exclusion filter.
+
+For example:
+
+ -f'dart \.dart$ \.html$ \.yaml$ @ \.js$ .*~$'
+
+persists a new filter named *dart* that includes *.dart*,
+*.html* and *.yaml* files, but exludes *.js* and tilda files.
 
 If one or more indices is supplied with the update flag set, the
-databases for the index (indices) will be updated (e.g. *updatedb*
+databases for the index/indices will be updated (e.g. *updatedb*
 will be called to re-index)
 
-If one or more indices is supplied with one additional argument, that
-argument is the grep pattern and is grepped on all files in all
-specified indices.
+If one or more indices is supplied with zero or more filter arguments
+and one or more remaining positional arguments, the positional
+arguments become grep patterns and the command performs a grep against
+all files files matching the indices with any filters applied.
 
+TODO:
 If one positional argument is provided without indices or any other
 arguments a the prior search is replacing the grep pattern with the
 positional argument.
-
 
 ''');
   print(_parser.getUsage());
@@ -79,68 +129,38 @@ positional argument.
 //! The result is a map containing all options, including positional options
 Map _parseArgs(List<String> args) {
   ArgResults argResults;
-  Map result = { };
+  Map result = {};
   List remaining = [];
 
   _parser = new ArgParser();
   try {
     /// Fill in expectations of the parser
-    _parser.addFlag('update',
-      help: r'''
+    _parser.addFlag('update', help: r'''
 If set will update any specified indices
-''',
-      abbr: 'u',
-      defaultsTo: false
-    );
-    _parser.addFlag('remove-item',
-      help: r'''
+''', abbr: 'u', defaultsTo: false);
+    _parser.addFlag('remove-item', help: r'''
 If set will remove any specified indices (-i) or filters (-f)
-''',
-      abbr: 'r',
-      defaultsTo: false
-    );
-    _parser.addFlag('remove-all',
-      help: r'''
+''', abbr: 'r', defaultsTo: false);
+    _parser.addFlag('remove-all', help: r'''
 Remove all stored indices
-''',
-      abbr: 'R',
-      defaultsTo: false
-    );
-    _parser.addFlag('list',
-      help: r'''
-For any indices or filters provided, list associated items. For indices
-it lists all files, for filters lists the details.
-Effectively *find* on the index and print on filter.
-''',
-      abbr: 'l',
-      defaultsTo: false
-    );
-    _parser.addFlag('display-filters',
-      help: r'''
+''', abbr: 'R', defaultsTo: false);
+    _parser.addFlag('list', help: r'''
+For any indices or filters provided, list associated
+items. For indices it lists all files, for filters
+lists the details.  Effectively *find* on the index
+and print on filter.
+''', abbr: 'l', defaultsTo: false);
+    _parser.addFlag('display-filters', help: r'''
 Display all persisted filters
-''',
-      abbr: null,
-      defaultsTo: false
-    );
-    _parser.addFlag('help',
-      help: r'''
+''', abbr: null, defaultsTo: false);
+    _parser.addFlag('help', help: r'''
 Display this help screen
-''',
-      abbr: 'h',
-      defaultsTo: false
-    );
+''', abbr: 'h', defaultsTo: false);
 
-    _parser.addOption('index',
-      help: r'''
+    _parser.addOption('index', help: r'''
 Id of index associated with command
-''',
-      defaultsTo: null,
-      allowMultiple: true,
-      abbr: 'i',
-      allowed: null
-    );
-    _parser.addOption('path',
-      help: r'''
+''', defaultsTo: null, allowMultiple: true, abbr: 'i', allowed: null);
+    _parser.addOption('path', help: r'''
 Colon separated fields specifying path with
 pruning. Fields are:
 
@@ -151,59 +171,41 @@ pruning. Fields are:
 
  e.g. -p /home/gnome/ebisu:cache:.pub:.git
 
-''',
-      defaultsTo: null,
-      allowMultiple: true,
-      abbr: 'p',
-      allowed: null
-    );
-    _parser.addOption('prune-name',
-      help: r'''
+''', defaultsTo: null, allowMultiple: true, abbr: 'p', allowed: null);
+    _parser.addOption('prune-name', help: r'''
 Global prune names excluded from all paths
-''',
-      defaultsTo: null,
-      allowMultiple: true,
-      abbr: 'P',
-      allowed: null
-    );
-    _parser.addOption('prune-path',
-      help: r'''
+''', defaultsTo: null, allowMultiple: true, abbr: 'P', allowed: null);
+    _parser.addOption('prune-path', help: r'''
 Fully qualified path existing somewhere within a path
 to be excluded
 
-''',
-      defaultsTo: null,
-      allowMultiple: true,
-      abbr: 'X',
-      allowed: null
-    );
-    _parser.addOption('filter',
-      help: r'''
+''', defaultsTo: null, allowMultiple: true, abbr: 'X', allowed: null);
+    _parser.addOption('filter', help: r'''
 Specifies a filter. If the argument is a single
 identifier it must repsent a filter stored in the
 database, to be used in the find/grep operation.
 
-If the argument more than just an identifier it is
+If the argument is more than just an identifier it is
 considered a filter definition and must be of the
 form:
 
-  filter_identifier;inclusions;exclusions
+ filter_id [ str_or_regex ...] @  [ str_or_regex ...]
 
-Both inclusions and exclusions are comma separated
+Both inclusions and exclusions are space separated
 fields representing patterns to include/exclude. If a
 pattern has non-word characters (i.e. not [\w_.]) it
-assumed to be a regex and the filtering is matched
+is assumed to be a regex and the filtering is matched
 case insensitively. Otherwise the field is a string
 and is matched exactly.
 
 Examples:
 
--f 'dart_filter;\.dart$,\.html$,\.yaml$;\.js$,.*~$'
--f 'cpp_filter;\.(?:hpp|cpp|c|h|inl|cxx)$;'
+-f 'dart \.dart$ \.html$ \.yaml$ @ \.js$ .*~$'
+-f 'cpp_filter \.(?:hpp|cpp|c|h|inl|cxx)$@'
 
-The first extablishes a filter named *dart_filter*
-that includes dart, html and yaml files and excludes
-js and tilda files.
+The first persists a filter named *dart_filter* that
+includes dart, html and yaml files and excludes js
+and tilda files.
 
 -i my_oss -f dart_filter -f cpp_filter join split
 
@@ -211,47 +213,30 @@ These flags will search index *my_oss* filtering to
 *dart_filter* and *cpp_filter* looking for the words
 *join* and *split*
 
-''',
-      defaultsTo: null,
-      allowMultiple: true,
-      abbr: 'f',
-      allowed: null
-    );
-    _parser.addOption('immediate-filter',
-      help: r'''
+''', defaultsTo: null, allowMultiple: true, abbr: 'f', allowed: null);
+    _parser.addOption('immediate-filter', help: r'''
 Use the filter specified to restrict files searched
 The format must be two fields separated by a single
 semicolon where each field represents a pattern:
 
--F'\.(?:hpp|cpp|c|h|inl|cxx)$;'
--F';\.(?:\.obj|\.a)'
+-F '\.(?:hpp|cpp|c|h|inl|cxx)$@'
+-F '@\.(?:\.obj|\.a)'
 
-The first says to *include* some c++ type files and leaves
-the *exclude* field blank. The second says to exclude
-.obj and .a files See [create_filter] option
+The first says to *include* some c++ type files and
+leaves the *exclude* field blank. The second says to
+exclude .obj and .a files See [create_filter] option
 for more on how the patterns are interpreted. Note:
 the use of semicolon prevents collisions with group
 regex expressions.
 
-''',
-      defaultsTo: null,
-      allowMultiple: true,
-      abbr: 'F',
-      allowed: null
-    );
-    _parser.addOption('grep-args',
-      help: r'''
+''', defaultsTo: null, allowMultiple: true, abbr: 'F', allowed: null);
+    _parser.addOption('grep-args', help: r'''
 Arguments passed directly to grep
-''',
-      defaultsTo: null,
-      allowMultiple: true,
-      abbr: 'g',
-      allowed: null
-    );
+''', defaultsTo: null, allowMultiple: true, abbr: 'g', allowed: null);
 
     /// Parse the command line options (excluding the script)
     argResults = _parser.parse(args);
-    if(argResults.wasParsed('help')) {
+    if (argResults.wasParsed('help')) {
       _usage();
       exit(0);
     }
@@ -269,9 +254,8 @@ Arguments passed directly to grep
     result['grep-args'] = argResults['grep-args'];
     result['help'] = argResults['help'];
 
-    return { 'options': result, 'rest': argResults.rest };
-
-  } catch(e) {
+    return {'options': result, 'rest': argResults.rest};
+  } catch (e) {
     _usage();
     throw e;
   }
@@ -297,25 +281,26 @@ class ArgProcessor {
   bool listFlag;
   bool displayFiltersFlag;
   List<String> grepArgs;
-  Map<String,PruneSpec> pathMap = {};
+  Map<String, PruneSpec> pathMap = {};
   // custom <class ArgProcessor>
 
-  ArgProcessor(List<String> this.args, Map options,
-      List<String> positionals) :
-    this.options = options,
-    this.positionals = positionals,
-    indexArgs = options['index'],
-    pathArgs = options['path'],
-    pruneNameArgs = options['prune-name'],
-    prunePathArgs = options['prune-path'],
-    filterArgs = options['filter'],
-    immediateFilterArgs = options['immediate-filter'],
-    grepArgs = options['grep-args'],
-    updateFlag = options['update'],
-    removeItemFlag = options['remove-item'],
-    removeAllFlag = options['remove-all'],
-    listFlag = options['list'],
-    displayFiltersFlag = options['display-filters'];
+  ArgProcessor(List<String> this.args, Map options, List<String> positionals)
+      : this.options = options,
+        this.positionals = positionals,
+        indexArgs = options['index'],
+        pathArgs = options['path'],
+        pruneNameArgs = options['prune-name'],
+        prunePathArgs = options['prune-path'],
+        filterArgs = options['filter'],
+        immediateFilterArgs = options['immediate-filter'],
+        grepArgs = options['grep-args'],
+        updateFlag = options['update'],
+        removeItemFlag = options['remove-item'],
+        removeAllFlag = options['remove-all'],
+        listFlag = options['list'],
+        displayFiltersFlag = options['display-filters'] {
+    print("filters => ${options['filter']} ${options['filter'].length}");
+  }
 
   toString() => """
 indexArgs: $indexArgs
@@ -342,72 +327,107 @@ displayFilters: $displayFiltersFlag
   final snakeCharsRe = new RegExp(r'^[\w_]+$');
   isSnake(s) => snakeCharsRe.hasMatch(s);
   isMatch(String s, Id id) =>
-    isSnake(s)? (s == id.snake) : id.snake.contains(new RegExp(s));
+      isSnake(s) ? (s == id.snake) : id.snake.contains(new RegExp(s));
 
-  process() async {
-    if(args.isEmpty) {
-      await printIndices();
-      await printFilters();
+  process() => Indexer.withIndexer((Indexer indexer) async {
+    if (args.isEmpty) {
+      await printIndices(indexer);
+      await printFilters(indexer);
     } else {
+      createNewFilters(indexer);
 
       /// Deterimine if this is
       /// - index creation
       /// - grep operation (with optional filter creation)
       /// - removal operation
       /// - find operation (with optional filter creation)
-      if(impliesIndexCreation) {
-        if(indexArgs.length == 1) {
-          await createIndex();
+      if (impliesIndexCreation) {
+        if (indexArgs.length == 1) {
+          await createIndex(indexer);
         } else {
           reportCreateIndexError();
         }
-      } else if(impliesUpdate) {
-        if(hasIndices) {
-          if(hasFilters)
-            _logger
+      } else if (impliesUpdate) {
+        if (hasIndices) {
+          if (hasFilters) _logger
               .warning('When doing update filters $fliterArgs are not used');
-          return Indexer.withIndexer((Indexer indexer) async {
-            final targetIndices = (await matchingIndices(indexer));
-            targetIndices
-            .forEach((Index index) async =>
-                await indexer
-                .updateIndex(index)
-                .then((_) => announceIndexOpComplete('Updated', index)));
-          });
-        }
-      } else if(impliesRemoval) {
-        return removeItems();
-      } else if(impliesGrep) {
-        return Indexer.withIndexer((Indexer indexer) async {
           final targetIndices = (await matchingIndices(indexer));
-          positionals
-          .forEach((String positional) => grepArgs.addAll(['-e', positional]));
-          return grepWithIndexer(targetIndices, grepArgs, indexer);
-        });
-      } else if(impliesListFiles) {
-        return listFiles();
-      } else if(hasIndices || hasFilters) {
-        return listItems();
+          targetIndices.forEach((Index index) async => await indexer
+              .updateIndex(index)
+              .then((_) => announceIndexOpComplete('Updated', index)));
+        }
+      } else if (impliesRemoval) {
+        return removeItems(indexer);
+      } else if (impliesGrep) {
+        final targetIndices = (await matchingIndices(indexer));
+        final filters = (await matchingFilters(indexer));
+        positionals.forEach(
+            (String positional) => grepArgs.addAll(['-e', positional]));
+        return grepWithIndexer(targetIndices, grepArgs, indexer, filters);
+      } else if (impliesListFiles) {
+        return listFiles(indexer);
+      } else if (hasIndices || hasFilters) {
+        return listItems(indexer);
       }
     }
+  });
+
+  /// Scans filter options (-f...) for filter creates. For each persists the
+  /// filter, then pushes the argument on the list of filterArgs for later
+  /// processing. This approach allows new filters to be created/modified
+  /// in the grep/locate itself
+  /// e.g.
+  /// xgrep -i dart -f'dart_filter \.dart$ \.html$ \.yaml$ @ \.js$ .*~$' switch
+  ///
+  /// This will persist the *dart_filer* then grep for swithc in index *dart*
+  /// using that filter
+  createNewFilters(indexer) async {
+    final creationFilters = [];
+    filterArgs.removeWhere((String arg) {
+      final match = arg.contains('@') && arg.contains(' ');
+      if (match) creationFilters.add(arg);
+      return match;
+    });
+
+    if (!creationFilters.isEmpty) {
+      creationFilters.forEach((String filterArg) async {
+        final parts = filterArg.split('@');
+        final nameAndIncludes = parts.first.trim().split(' ');
+        final excludes = parts.last.trim().split(' ');
+        final id = idFromString(nameAndIncludes.first);
+        final filter =
+            new FilenameFilterSet(id, nameAndIncludes.sublist(1), excludes);
+        await indexer.persistFilenameFilterSet(filter);
+        announceFilterOpComplete('Saved', filter);
+        filterArgs.addAll(['-f', id.snake]);
+      });
+    }
+
+    print('''
+Post filter: $filterArgs
+Creates: $creationFilters
+positionals: $positionals
+''');
   }
 
-  createIndex() async {
+  createIndex(indexer) async {
     _logger.info('Creating index ${indexArgs.first}');
-    await Indexer.withIndexer((Indexer indexer) async {
-      final map = {};
-      for (final path in pathArgs) {
-        final parts = path.split(':');
-        assert(!parts.isEmpty);
-        map[parts.first] = (parts.length == 1)
+    final map = {};
+    for (final path in pathArgs) {
+      final parts = path.split(':');
+      assert(!parts.isEmpty);
+      map[parts.first] = (parts.length == 1)
           ? emptyPruneSpec
           : new PruneSpec(parts.sublist(1), []);
-      }
-      final index = new Index
-      .withPruning(idFromString(indexArgs.first), map);
-      await indexer.saveAndUpdateIndex(index);
-      announceIndexOpComplete('Created/updated', index);
-    });
+    }
+    final index = new Index.withPruning(idFromString(indexArgs.first), map);
+    await indexer.saveAndUpdateIndex(index);
+    announceIndexOpComplete('Created/updated', index);
+  }
+
+  announceFilterOpComplete(String op, FilenameFilterSet filter) {
+    print('$op filter *${nameItem(filter)}*');
+    printFilenameFilter(filter);
   }
 
   announceIndexOpComplete(String op, Index index) {
@@ -415,91 +435,82 @@ displayFilters: $displayFiltersFlag
     printIndex(index);
   }
 
-  listItems() async =>
-    Indexer.withIndexer((Indexer indexer) async {
-      (await matchingIndices(indexer)).forEach(printIndex);
-      (await matchingFilters(indexer)).forEach(printFilenameFilter);
-    });
+  listItems(indexer) async {
+    (await matchingIndices(indexer)).forEach(printIndex);
+    (await matchingFilters(indexer)).forEach(printFilenameFilter);
+  }
 
-  removeItems() async {
-    if(removeAllFlag) {
+  removeItems(indexer) async {
+    if (removeAllFlag) {
       print('Are you sure you want to remove all indices: [N/Y]?');
       final ans = stdin.readLineSync();
       const doIt = const ['Y', 'y', 'yes', 'Yes'];
       if (doIt.contains(ans)) {
         print('Deleting all items');
-        return await Indexer.withIndexer((Indexer indexer) =>
-            indexer.removeAllItems());
+        await indexer.removeAllItems();
       } else {
         print('Nothing removed: Dodged a bullet there');
       }
     } else {
-      if(indexArgs.isEmpty && filterArgs.isEmpty) {
+      if (indexArgs.isEmpty && filterArgs.isEmpty) {
         assert(removeItemFlag);
         exitWith('''
 remove-item requires -i and/or -f specifying named items to remove''');
       } else {
-        return await Indexer.withIndexer((Indexer indexer) async {
-          await removeSpecifiedIndices(indexer);
-          await removeSpecifiedFilters(indexer);
-          _logger.info('Completed item removal');
-        });
+        await removeSpecifiedIndices(indexer);
+        await removeSpecifiedFilters(indexer);
+        _logger.info('Completed item removal');
       }
     }
   }
 
-  listFiles() async {
-    return Indexer.withIndexer((Indexer indexer) async {
-      final futures = [];
-      final indices = await matchingIndices(indexer);
-      for(final index in indices) {
-        _logger.info('Listing files for ${nameItem(index)}');
-        futures.add(indexer.processPaths(index, (path) => print(path)));
-      }
-      return Future.wait(futures);
-    });
+  listFiles(indexer) async {
+    final indices = await matchingIndices(indexer);
+    for (final index in indices) {
+      _logger.info('Listing files for ${nameItem(index)}');
+      await indexer.processPaths(index, (path) => print(path));
+    }
   }
 
   matchingIndices(Indexer indexer) async {
-    if(_indices != null) return _indices;
+    if (_indices != null) return _indices;
     final indicesAvailable = (await indexer.indices);
     _indices = indicesAvailable
-    .where((Index index) => indexArgs.any((String s) => isMatch(s, index.id)))
-    .toList();
+        .where(
+            (Index index) => indexArgs.any((String s) => isMatch(s, index.id)))
+        .toList();
     _logger.info('Matching indices ${nameItems(_indices).toList()}');
-    if(_indices.isEmpty) {
+    if (_indices.isEmpty) {
       print('Could find no matching indexes on $indexArgs');
     }
     return _indices;
   }
 
   matchingFilters(Indexer indexer) async {
-    if(_filters != null) return _filters;
+    if (_filters != null) return _filters;
     _filters = (await indexer.filenameFilterSets)
-    .where((FilenameFilterSet filter) =>
-        filterArgs.any((String s) => isMatch(s, filter.id)))
-    .toList();
+        .where((FilenameFilterSet filter) =>
+            filterArgs.any((String s) => isMatch(s, filter.id)))
+        .toList();
     _logger.info('Matching filters ${nameItems(_filters).toList()}');
     return _filters;
   }
 
-  removeSpecifiedIndices(Indexer indexer) =>
-    matchingIndices(indexer).then((List<Index> indices) {
-      _logger.info('Removing indices $indexArgs matching '
-          '${nameItems(indices).toList()}');
-      final futures = [];
-      indices.forEach((Index index) {
-        futures.add(indexer.removeIndex(index.id));
-        announceIndexOpComplete('Removed', index);
-      });
-      return Future.wait(futures);
+  removeSpecifiedIndices(Indexer indexer) => matchingIndices(indexer).then(
+      (List<Index> indices) async {
+    _logger.info('Removing indices $indexArgs matching '
+        '${nameItems(indices).toList()}');
+    indices.forEach((Index index) async {
+      await indexer.removeIndex(index.id);
+      announceIndexOpComplete('Removed', index);
     });
+  });
 
-  removeSpecifiedFilters(Indexer indexer) =>
-    matchingFilters(indexer).then((List<FilenameFilterSet> filters) {
-      _logger.info('Removing filters $filterArgs matching '
-          '${nameItems(filters).toList()}');
-    });
+  removeSpecifiedFilters(Indexer indexer) => matchingFilters(indexer).then(
+      (List<FilenameFilterSet> filters) {
+    _logger.info('Removing filters $filterArgs matching '
+        '${nameItems(filters).toList()}');
+  });
 
   exitWith(String err) {
     print(err);
@@ -507,8 +518,8 @@ remove-item requires -i and/or -f specifying named items to remove''');
   }
 
   reportCreateIndexError() {
-    exitWith((indexArgs.isEmpty)?
-      '''
+    exitWith((indexArgs.isEmpty)
+        ? '''
 You have paths specified ($pathArgs),
 indicating a desire to create an index but no named index.
 Please name the index - e.g.:
@@ -516,8 +527,8 @@ Please name the index - e.g.:
 xgrep -i my_dart \\
    -p \$HOME/dev/open_source/xgrep:.pub:.git \\
    -p \$HOME/dev/open_source/ebisu:.pub:.git
-''' :
-      '''
+'''
+        : '''
 You have specified path arguments:($pathArgs)
 with multiple indices: ($indexArgs)
 
@@ -529,8 +540,7 @@ pruning.
 xgrep -i my_dart \\
    -p \$HOME/dev/open_source/xgrep:.pub:.git \\
    -p \$HOME/dev/open_source/ebisu:.pub:.git
-'''
-              );
+''');
   }
 
   // end <class ArgProcessor>
@@ -538,17 +548,16 @@ xgrep -i my_dart \\
   List<FilenameFilterSet> _filters;
 }
 
-
 main(List<String> args) async {
-  Logger.root.onRecord.listen((LogRecord r) =>
-      print("${r.loggerName} [${r.level}]:\t${r.message}"));
+  Logger.root.onRecord.listen(
+      (LogRecord r) => print("${r.loggerName} [${r.level}]:\t${r.message}"));
   Logger.root.level = Level.INFO;
   Map argResults = _parseArgs(args);
   Map options = argResults['options'];
   List positionals = argResults['rest'];
 
   // custom <xgrep main>
-  Logger.root.level = Level.OFF;
+  Logger.root.level = Level.INFO;
   final argProcessor = new ArgProcessor(args, options, positionals);
   await argProcessor.process();
   // end <xgrep main>
@@ -595,12 +604,11 @@ printFilenameFilter(FilenameFilterSet ffs) {
   });
 }
 
-printIndices() async {
+printIndices(indexer) async {
   print('**** Current Indices ****');
-  await Indexer.withIndexer((Indexer indexer) async {
-    final indices = await indexer.indices;
-    if (indices.isEmpty) {
-      print('''
+  final indices = await indexer.indices;
+  if (indices.isEmpty) {
+    print('''
 You have no indices created yet. Consider creating some.
 For example:
 
@@ -608,30 +616,26 @@ xgrep -i my_dart \\
    -p \$HOME/dev/open_source/xgrep:.pub:.git \\
    -p \$HOME/dev/open_source/ebisu:.pub:.git
 ''');
-    } else {
-      indices.forEach(printIndex);
-    }
-  });
+  } else {
+    indices.forEach(printIndex);
+  }
 }
 
-printFilters() async {
+printFilters(indexer) async {
   print('**** Current Filters ****');
-  await Indexer.withIndexer((Indexer indexer) async {
-    final filters = await indexer.filenameFilterSets;
-    if (filters.isEmpty) {
-      print(r"""
+  final filters = await indexer.filenameFilterSets;
+  if (filters.isEmpty) {
+    print(r"""
 You have no filters. Consider creating some.
 For example:
 
 xgrep -f 'dart_filter;\.dart$,\.html$,\.yaml$;\.js$,.*~$'
 
 """);
-    } else {
-      filters.forEach(printFilenameFilter);
-    }
-  });
+  } else {
+    filters.forEach(printFilenameFilter);
+  }
 }
-
 
 nameItem(item) => item.id.snake;
 nameItems(items) => items.map((item) => nameItem(item));

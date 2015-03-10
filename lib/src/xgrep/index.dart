@@ -35,6 +35,9 @@ class FilenameFilterSet {
 
   FilenameFilterSet._default();
 
+  bool excludePath(String filePath) =>
+      _exclude.any((exclusion) => filePath.contains(interpret(exclusion)));
+
   Map toJson() => {
     "_id": id.snake,
     "include": ebisu_utils.toJson(include),
@@ -243,10 +246,10 @@ abstract class IndexUpdater {
   /// Remove the index identified by [id]
   Future removeIndex(Id id);
 
-  /// Use the supplied [index] to perform a query on databases associated with
-  /// the [paths] in the index. The result is a stream of filenames
-  Future<Stream<String>> findPaths(Index index,
-      [FindArgs findArgs = emptyFindArgs]);
+  /// Use the supplied [index] to perform a query on databases
+  /// associated with the [paths] in the index. The result is a stream
+  /// of filenames
+  Future<Stream<String>> findPaths(Index index);
 
   Future history(Id id);
 
@@ -314,9 +317,8 @@ class Indexer {
     await completer.future;
   }
 
-  Future<Stream<String>> findPaths(Index index,
-          [FindArgs findArgs = emptyFindArgs]) =>
-      indexUpdater.findPaths(index, findArgs);
+  Future<Stream<String>> findPaths(Index index) =>
+      indexUpdater.findPaths(index);
 
   Future<Index> lookupIndex(Id id) => indexPersister.lookupIndex(id);
   Future<List<FilenameFilterSet>> get filenameFilterSets =>
@@ -327,10 +329,10 @@ class Indexer {
       indexPersister.removeFilenameFilterSet(setId);
 
   Future removeAllFilenameFilterSets() =>
-    indexPersister.removeAllFilenameFilterSets();
+      indexPersister.removeAllFilenameFilterSets();
 
   Future removeAllItems() =>
-    removeAllIndices().then((_) => removeAllFilenameFilterSets());
+      removeAllIndices().then((_) => removeAllFilenameFilterSets());
 
   // end <class Indexer>
 }
