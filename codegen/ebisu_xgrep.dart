@@ -14,7 +14,6 @@ void main() {
   useDartFormatter = true;
   System ebisu = system('xgrep')
     ..includeHop = true
-    ..introduction = 'A library/script for finding things'
     ..license = 'boost'
     ..rootPath = topDir
     ..pubSpec = (pubspec('xgrep')
