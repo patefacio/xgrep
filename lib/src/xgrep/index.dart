@@ -158,7 +158,7 @@ class Index {
   addPath(String path, [PruneSpec pruneSpec = emptyPruneSpec]) =>
       paths[path] = pruneSpec;
 
-  addPaths(Map<String, Prunespec> additions) => paths.addall(additions);
+  addPaths(Map<String, PruneSpec> additions) => paths.addAll(additions);
 
   Map toJson() => {
     "_id": _id.snake,
@@ -251,8 +251,6 @@ abstract class IndexUpdater {
   /// of filenames
   Future<Stream<String>> findPaths(Index index, [List filters = const []]);
 
-  Future history(Id id);
-
   // end <class IndexUpdater>
 }
 
@@ -282,11 +280,6 @@ class Indexer {
   saveAndUpdateIndex(Index index) => indexPersister
       .persistIndex(index)
       .then((_) => indexUpdater.updateIndex(index));
-
-  IndexStats stats(Id indexId) async {
-    final index = await lookupIndex(indexId);
-    return new IndexStats(index, indexUpdater.lastUpdate(index));
-  }
 
   removeIndex(Id id) {
     _logger.info('Indexer removing index ${id.snake}');

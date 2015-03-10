@@ -125,7 +125,7 @@ When adding paths provide either:
 
   Future removeFilenameFilterSet(Id filterId) => connectFuture.then(
       (c) => _filterSets
-          .remove({'_id': _filterId.snake})
+          .remove({'_id': filterId.snake})
           .then((mongoResult) => _convertResult(mongoResult,
               () => 'Unable to remove filter set ${filterId.snake}',
               filterId)));
