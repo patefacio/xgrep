@@ -30,7 +30,7 @@ runScriptWithArgsInteractive(List<String> args, [interaction(Process)]) async =>
 addTest(testName, scriptArgs, required, [List requiredNot = const []]) => test(
     testName, () async => await runScriptWithArgs(scriptArgs).then(
         (String output) {
-  if (false) {
+  if (true) {
     print('--------COMPLETED $testName------');
     print(output);
   }
