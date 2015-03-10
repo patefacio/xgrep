@@ -298,9 +298,7 @@ class ArgProcessor {
         removeItemFlag = options['remove-item'],
         removeAllFlag = options['remove-all'],
         listFlag = options['list'],
-        displayFiltersFlag = options['display-filters'] {
-    print("filters => ${options['filter']} ${options['filter'].length}");
-  }
+        displayFiltersFlag = options['display-filters'];
 
   toString() => """
 indexArgs: $indexArgs
@@ -363,7 +361,7 @@ displayFilters: $displayFiltersFlag
         final filters = (await matchingFilters(indexer));
         positionals.forEach(
             (String positional) => grepArgs.addAll(['-e', positional]));
-        return grepWithIndexer(targetIndices, grepArgs, indexer, filters);
+        return grepWithIndexer(targetIndices, grepArgs, indexer);
       } else if (impliesListFiles) {
         return listFiles(indexer);
       } else if (hasIndices || hasFilters) {
@@ -466,9 +464,10 @@ remove-item requires -i and/or -f specifying named items to remove''');
 
   listFiles(indexer) async {
     final indices = await matchingIndices(indexer);
+    final filters = (await matchingFilters(indexer));
     for (final index in indices) {
       _logger.info('Listing files for ${nameItem(index)}');
-      await indexer.processPaths(index, (path) => print(path));
+      await indexer.processPaths(index, (path) => print(path), filters);
     }
   }
 
@@ -557,7 +556,7 @@ main(List<String> args) async {
   List positionals = argResults['rest'];
 
   // custom <xgrep main>
-  Logger.root.level = Level.INFO;
+  Logger.root.level = Level.OFF;
   final argProcessor = new ArgProcessor(args, options, positionals);
   await argProcessor.process();
   // end <xgrep main>

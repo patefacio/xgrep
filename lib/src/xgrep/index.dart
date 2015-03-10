@@ -249,7 +249,7 @@ abstract class IndexUpdater {
   /// Use the supplied [index] to perform a query on databases
   /// associated with the [paths] in the index. The result is a stream
   /// of filenames
-  Future<Stream<String>> findPaths(Index index);
+  Future<Stream<String>> findPaths(Index index, [List filters = const []]);
 
   Future history(Id id);
 
@@ -308,17 +308,18 @@ class Indexer {
 
   Future<List<Index>> get indices => indexPersister.indices;
 
-  Future processPaths(Index index, processor(String)) async {
+  Future processPaths(Index index, processor(String),
+      [List filters = const []]) async {
     final completer = new Completer<String>();
-    indexUpdater.findPaths(index).then((Stream stream) {
+    indexUpdater.findPaths(index, filters).then((Stream stream) {
       stream.listen((String path) => processor(path),
           onDone: () => completer.complete());
     });
     await completer.future;
   }
 
-  Future<Stream<String>> findPaths(Index index) =>
-      indexUpdater.findPaths(index);
+  Future<Stream<String>> findPaths(Index index, [List filters = const []]) =>
+      indexUpdater.findPaths(index, filters);
 
   Future<Index> lookupIndex(Id id) => indexPersister.lookupIndex(id);
   Future<List<FilenameFilterSet>> get filenameFilterSets =>

@@ -43,14 +43,29 @@ class MlocateIndexUpdater extends IndexUpdater {
     return result;
   }
 
-  Future<Stream<String>> findPaths(Index index) async {
+  Future<Stream<String>> findPaths(Index index,
+      [List filters = const []]) async {
     final command = mlocateCommand(index);
     _logger.info('Running $command');
     final process = await Process.start(command.first, command.sublist(1));
 
+    bool isAllowed(String path) {
+      var excluded = false;
+      for(final filter in filters) {
+        if(filter.excludePath(path)) {
+          _logger.info('Filtered $path on ${filter.id}=>${filter.exclude}');
+          excluded = true;
+          break;
+        }
+      }
+      return !excluded;
+    }
+
     return process.stdout
         .transform(new Utf8Decoder())
-        .transform(new LineSplitter());
+        .transform(new LineSplitter())
+        .where((String path) => (!FileSystemEntity.isDirectorySync(path) &&
+            isAllowed(path)));
   }
 
   List<String> _pruneArgs(PruneSpec pruneSpec) {

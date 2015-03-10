@@ -4,11 +4,9 @@ part of xgrep.xgrep;
 
 final _nullTerminator = new String.fromCharCode(0);
 
-grepWithIndexer(List<Index> indices, List<String> grepArgs, Indexer indexer,
-    [List filters = const []]) {
+grepWithIndexer(List<Index> indices, List<String> grepArgs, Indexer indexer) {
   final command = _xargsGrepCommand(grepArgs);
   int filesConsidered = 0;
-  int filesFiltered = 0;
   int linesMatched = 0;
   _logger.info(() => 'Grep running $command');
 
@@ -30,14 +28,8 @@ grepWithIndexer(List<Index> indices, List<String> grepArgs, Indexer indexer,
       final completer = new Completer<Id>();
 
       futures.add(indexer.findPaths(index).then((Stream stream) => stream
-          .where((String path) {
-        if (FileSystemEntity.isDirectorySync(path)) return false;
-        filesConsidered++;
-        final skipped = filters.any((filter) => filter.excludePath(path));
-        if (skipped) filesFiltered++;
-        return !skipped;
-      }).map((path) => path + _nullTerminator).listen(
-          (String s) => process.stdin.write(s), onDone: () {
+          .map((path) => path + _nullTerminator)
+          .listen((String s) => process.stdin.write(s), onDone: () {
         _logger.fine('Finished find on ${index.id}');
         completer.complete(index.id);
       })));
