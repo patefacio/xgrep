@@ -59,6 +59,7 @@ import 'dart:io';
 import 'package:args/args.dart';
 import 'package:id/id.dart';
 import 'package:logging/logging.dart';
+import 'package:path/path.dart';
 import 'package:xgrep/xgrep.dart';
 
 //! The parser for this script
@@ -150,6 +151,10 @@ items. For indices it lists all files, for filters
 lists the details.  Effectively *find* on the index
 and print on filter.
 ''', abbr: 'l', defaultsTo: false);
+    _parser.addFlag('emacs-support', help: r'''
+Writes emacs file $HOME/.xgrep.el which contains
+functions for running various commands from emacs.
+''', abbr: 'e', defaultsTo: false);
     _parser.addFlag('display-filters', help: r'''
 Display all persisted filters
 ''', abbr: null, defaultsTo: false);
@@ -248,6 +253,7 @@ Arguments passed directly to grep
     result['remove-item'] = argResults['remove-item'];
     result['remove-all'] = argResults['remove-all'];
     result['list'] = argResults['list'];
+    result['emacs-support'] = argResults['emacs-support'];
     result['display-filters'] = argResults['display-filters'];
     result['filter'] = argResults['filter'];
     result['immediate-filter'] = argResults['immediate-filter'];
@@ -280,6 +286,7 @@ class ArgProcessor {
   bool removeAllFlag;
   bool listFlag;
   bool displayFiltersFlag;
+  bool emacsSupportFlag;
   List<String> grepArgs;
   Map<String, PruneSpec> pathMap = {};
   // custom <class ArgProcessor>
@@ -298,7 +305,8 @@ class ArgProcessor {
         removeItemFlag = options['remove-item'],
         removeAllFlag = options['remove-all'],
         listFlag = options['list'],
-        displayFiltersFlag = options['display-filters'];
+        displayFiltersFlag = options['display-filters'],
+        emacsSupportFlag = options['emacs-support'];
 
   toString() => """
 indexArgs: $indexArgs
@@ -312,6 +320,7 @@ removeItem: $removeItemFlag
 removeAll: $removeAllFlag
 list: $listFlag
 displayFilters: $displayFiltersFlag
+emacsSupportFlag: $emacsSupportFlag
 """;
 
   bool get hasIndices => !indexArgs.isEmpty;
@@ -328,10 +337,15 @@ displayFilters: $displayFiltersFlag
       isSnake(s) ? (s == id.snake) : id.snake.contains(new RegExp(s));
 
   process() => Indexer.withIndexer((Indexer indexer) async {
+    _logger.info('${new DateTime.now()}: Processing $args');
     if (args.isEmpty) {
       await printIndices(indexer);
       await printFilters(indexer);
     } else {
+      if (emacsSupportFlag) {
+        await updateEmacsFile(indexer);
+      }
+
       createNewFilters(indexer);
 
       /// Deterimine if this is
@@ -361,7 +375,7 @@ displayFilters: $displayFiltersFlag
         final filters = (await matchingFilters(indexer));
         positionals.forEach(
             (String positional) => grepArgs.addAll(['-e', positional]));
-        return grepWithIndexer(targetIndices, grepArgs, indexer);
+        return grepWithIndexer(targetIndices, grepArgs, indexer, filters);
       } else if (impliesListFiles) {
         return listFiles(indexer);
       } else if (hasIndices || hasFilters) {
@@ -511,6 +525,47 @@ remove-item requires -i and/or -f specifying named items to remove''');
         '${nameItems(filters).toList()}');
   });
 
+  updateEmacsFile(Indexer indexer) async {
+    final theIndices = (await indexer.indices);
+    List parts = [
+'''
+(defun xgu-* ()
+  "Update all xgrep indices"
+  (interactive)
+  (shell-command "xgrep -i.* -u" "update all xgrep indices"))
+''',
+
+    ];
+    for (final index in theIndices) {
+      final snakeId = index.id.snake;
+      final eid = index.id.emacs;
+      parts.add('''
+(defun xg-$eid (args)
+  "Do an xgrep -i $snakeId with additional args. Look for things in the index"
+  (interactive "sEnter args:")
+  (grep (concat "xgrep -i $snakeId " args))
+  (set-buffer "*grep*")
+  (rename-buffer (concat "*xg-$eid " args "*") t))
+
+(defun xgl-$eid ()
+  "List all files in the index $snakeId"
+  (interactive)
+  (compile "xgrep -i $snakeId -l")
+  (set-buffer "*compilation*")
+  (rename-buffer "*list of $snakeId*" t))
+
+(defun xgu-$eid ()
+  "Update the index $snakeId"
+  (interactive)
+  (grep "xgrep -i $snakeId -u"))
+
+''');
+    }
+    final efile = join(Platform.environment['HOME'], '.xgrep.el');
+    new File(efile).writeAsStringSync(parts.join('\n'));
+    _logger.info('Wrote $efile');
+  }
+
   exitWith(String err) {
     print(err);
     exit(-1);
@@ -556,7 +611,7 @@ main(List<String> args) async {
   List positionals = argResults['rest'];
 
   // custom <xgrep main>
-  Logger.root.level = Level.OFF;
+  Logger.root.level = Level.INFO;
   final argProcessor = new ArgProcessor(args, options, positionals);
   await argProcessor.process();
   // end <xgrep main>

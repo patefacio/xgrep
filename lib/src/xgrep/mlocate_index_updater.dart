@@ -51,8 +51,8 @@ class MlocateIndexUpdater extends IndexUpdater {
 
     bool isAllowed(String path) {
       var excluded = false;
-      for(final filter in filters) {
-        if(filter.excludePath(path)) {
+      for (final filter in filters) {
+        if (filter.excludePath(path)) {
           _logger.info('Filtered $path on ${filter.id}=>${filter.exclude}');
           excluded = true;
           break;
@@ -64,8 +64,8 @@ class MlocateIndexUpdater extends IndexUpdater {
     return process.stdout
         .transform(new Utf8Decoder())
         .transform(new LineSplitter())
-        .where((String path) => (!FileSystemEntity.isDirectorySync(path) &&
-            isAllowed(path)));
+        .where((String path) =>
+            (!FileSystemEntity.isDirectorySync(path) && isAllowed(path)));
   }
 
   List<String> _pruneArgs(PruneSpec pruneSpec) {

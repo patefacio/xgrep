@@ -78,6 +78,7 @@ positional argument.
       ..imports = [
         'package:xgrep/xgrep.dart',
         'package:id/id.dart',
+        'package:path/path.dart',
         'async',
       ]
       ..classes = [
@@ -102,6 +103,8 @@ All arguments for processing as a unit.
           member('remove_all_flag')..type = 'bool',
           member('list_flag')..type = 'bool',
           member('display_filters_flag')..type = 'bool',
+          member('emacs_support_flag')..type = 'bool',
+
           member('grep_args')..type = 'List<String>',
 
           member('indices')..type = 'List<Index>'..access = IA,
@@ -166,6 +169,12 @@ items. For indices it lists all files, for filters
 lists the details.  Effectively *find* on the index
 and print on filter.'''
         ..abbr = 'l'
+        ..isFlag = true,
+        scriptArg('emacs_support')
+        ..doc = r'''
+Writes emacs file $HOME/.xgrep.el which contains
+functions for running various commands from emacs.'''
+        ..abbr = 'e'
         ..isFlag = true,
         scriptArg('display_filters')
         ..doc = 'Display all persisted filters'

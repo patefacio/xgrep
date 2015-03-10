@@ -4,7 +4,8 @@ part of xgrep.xgrep;
 
 final _nullTerminator = new String.fromCharCode(0);
 
-grepWithIndexer(List<Index> indices, List<String> grepArgs, Indexer indexer) {
+grepWithIndexer(List<Index> indices, List<String> grepArgs, Indexer indexer,
+    [List filters = const []]) {
   final command = _xargsGrepCommand(grepArgs);
   int filesConsidered = 0;
   int linesMatched = 0;
@@ -27,9 +28,14 @@ grepWithIndexer(List<Index> indices, List<String> grepArgs, Indexer indexer) {
     indices.forEach((Index index) {
       final completer = new Completer<Id>();
 
-      futures.add(indexer.findPaths(index).then((Stream stream) => stream
-          .map((path) => path + _nullTerminator)
-          .listen((String s) => process.stdin.write(s), onDone: () {
+      futures.add(indexer
+          .findPaths(index, filters)
+          .then((Stream stream) => stream
+              .map((path) => path + _nullTerminator)
+              .listen((path) {
+        filesConsidered++;
+        return process.stdin.write(path);
+      }, onDone: () {
         _logger.fine('Finished find on ${index.id}');
         completer.complete(index.id);
       })));
@@ -43,7 +49,7 @@ grepWithIndexer(List<Index> indices, List<String> grepArgs, Indexer indexer) {
     }).then((_) => process.exitCode);
   }).then((int exitCode) {
     _logger.info(() => 'Grep completed ($exitCode): '
-        '$filesConsidered files considered, $filesFiltered filtered, '
+        '$filesConsidered files considered, '
         '$linesMatched linesMatched');
     return exitCode;
   });
