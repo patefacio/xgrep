@@ -372,7 +372,6 @@ emacsSupportFlag: $emacsSupportFlag
       await printIndices(indexer);
       await printFilters(indexer);
     } else {
-
       createNewFilters(indexer);
 
       /// Deterimine if this is

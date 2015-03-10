@@ -1,20 +1,18 @@
 name: xgrep
-version: 0.0.1
+version: 0.0.2
 author: Daniel Davidson <dbdavidson@yahoo.com>
+homepage: https://github.com/patefacio/xgrep
+description: >
+  A library/script for locating/grepping things on linux
 dependencies:
 
 # custom <xgrep dependencies>
 
-  id:
-    git: git://github.com/patefacio/id
+  id: "^1.0.4"
     
-  ebisu:
-    git: git://github.com/patefacio/ebisu
+  ebisu: "^0.0.14"
     
-  mongo_dart:
-    git: git://github.com/vadimtsushko/mongo_dart
-
-  args: "^0.13.0"
+  mongo_dart: "^0.1.46"
 
 # end <xgrep dependencies>
 
@@ -32,23 +30,15 @@ dev_dependencies:
 
 dependency_overrides:
 # custom <xgrep dependency overrides>
-
-  quiver: '^0.21.1'
-  id:
-    git: git://github.com/patefacio/id
-    
-#  ebisu:
-#    path: /home/dbdavidson/dev/open_source/ebisu
-#    git: git://github.com/patefacio/ebisu
-
-  hop: ">=0.29.0"
-  args: "^0.13.0"
-  dart_style: "^0.1.6"
     
 # end <xgrep dependency overrides>
 
 transformers:
 
 # custom <xgrep transformers>
+
+environment:
+  sdk: ">=1.8.0 <2.0.0"
+
 # end <xgrep transformers>
 

@@ -14,8 +14,14 @@ void main() {
   useDartFormatter = true;
   System ebisu = system('xgrep')
     ..includeHop = true
+    ..introduction = 'A library/script for finding things'
     ..license = 'boost'
     ..rootPath = topDir
+    ..pubSpec = (pubspec('xgrep')
+        ..version = '0.0.2'
+        ..doc = 'A library/script for locating/grepping things on linux'
+        ..homepage = 'https://github.com/patefacio/xgrep'
+                 )
     ..doc = 'Package providing support for advanced find/grep'
     ..scripts = [
       script('xgrep')
