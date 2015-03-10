@@ -37,16 +37,12 @@ dependency_overrides:
   id:
     git: git://github.com/patefacio/id
     
-  ebisu:
-    path: /home/dbdavidson/dev/open_source/ebisu
+#  ebisu:
+#    path: /home/dbdavidson/dev/open_source/ebisu
 #    git: git://github.com/patefacio/ebisu
-
-  mongo_dart:
-    path: /home/dbdavidson/dev/open_source/mongo_dart
 
   hop: ">=0.29.0"
   args: "^0.13.0"
-
   dart_style: "^0.1.6"
     
 # end <xgrep dependency overrides>
