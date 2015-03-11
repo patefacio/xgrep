@@ -1,72 +1,79 @@
 part of xgrep.xgrep;
 
-/// List of regex filters for inclusion/exclusion of
-/// files on find operation.
+/// A list of patterns and a flag indicating whether this is an inclusion
+/// filter.
 ///
-/// So the following:
-///
-///     FilenameFilterSet([ '\.dart$', '\.yaml$' ], [ '\.js$' ])
-///
-/// would include *dart* and *yaml* files and exclude
-/// javascript *files*
-///
-class FilenameFilterSet {
-  bool operator ==(FilenameFilterSet other) => identical(this, other) ||
-      _id == other._id &&
-          const ListEquality().equals(_include, other._include) &&
-          const ListEquality().equals(_exclude, other._exclude);
+class Filter {
+  const Filter(this._id, this._isInclusion, this._patterns);
 
-  int get hashCode => hash3(_id, const ListEquality<String>().hash(_include),
-      const ListEquality<String>().hash(_exclude));
+  bool operator ==(Filter other) => identical(this, other) ||
+      _id == other._id &&
+          _isInclusion == other._isInclusion &&
+          const ListEquality().equals(_patterns, other._patterns);
+
+  int get hashCode =>
+      hash3(_id, _isInclusion, const ListEquality<String>().hash(_patterns));
 
   /// Uniquely identifies the filter set
   Id get id => _id;
-  /// List of string patterns interpreted as RegExp to *include*
-  List<String> get include => _include;
-  /// List of string patterns interpreted as RegExp to *exclude*
-  List<String> get exclude => _exclude;
-  // custom <class FilenameFilterSet>
-
-  static final _notRegexRe = new RegExp(r'^[\w_.]+$');
+  bool get isInclusion => _isInclusion;
+  /// List of string patterns comprising the filter
+  List<String> get patterns => _patterns;
+  // custom <class Filter>
 
   static interpret(String s) => _notRegexRe.hasMatch(s) ? s : new RegExp(s);
 
-  FilenameFilterSet(this._id, this._include, this._exclude);
+  factory Filter.fromArg(String arg) {
+    assert(!arg.isEmpty);
+    final match = _filterIdRe.firstMatch(arg);
+    if (match == null) {
+      throw new Exception('''
+The filter arg is not valid: $arg
 
-  FilenameFilterSet._default();
+Filter should be: filter_id [+-] pattern ...
+''');
+    }
 
-  bool excludePath(String filePath) =>
-      _exclude.any((exclusion) => filePath.contains(interpret(exclusion)));
+    final id = idFromString(match.group(1));
+    var remaining = match.group(2).trim();
+
+    bool isInclusion = remaining[0] != '-';
+    if(!isInclusion || remaining[0] == '+') {
+      remaining = remaining.substring(1).trim();
+    }
+
+    final parts = remaining.split(_whiteSpaceRe)
+      .map((s) => s.trim()).toList();
+    /// Following is to check taht if has special characters they are valid re's
+    parts.forEach((s) => interpret(s));
+    return new Filter(id, isInclusion, parts);
+  }
 
   Map toJson() => {
-    "_id": id.snake,
-    "include": ebisu_utils.toJson(include),
-    "exclude": ebisu_utils.toJson(exclude),
+    "_id": _id.snake,
+    "isInclusion": ebisu_utils.toJson(isInclusion),
+    "patterns": ebisu_utils.toJson(patterns),
   };
 
-  static FilenameFilterSet fromJson(Object json) {
+  static Filter fromJson(Object json) {
     if (json == null) return null;
     if (json is String) {
       json = convert.JSON.decode(json);
     }
     assert(json is Map);
-    return new FilenameFilterSet._default().._fromJsonMapImpl(json);
+    return new Filter._fromJsonMapImpl(json);
   }
 
-  void _fromJsonMapImpl(Map jsonMap) {
-    _id = idFromString(jsonMap["_id"]);
-    // include is List<String>
-    _include = ebisu_utils.constructListFromJsonData(
-        jsonMap["include"], (data) => data);
-    // exclude is List<String>
-    _exclude = ebisu_utils.constructListFromJsonData(
-        jsonMap["exclude"], (data) => data);
-  }
+  Filter._fromJsonMapImpl(Map jsonMap)
+      : _id = idFromString(jsonMap["_id"]),
+        _isInclusion = jsonMap["isInclusion"],
+        _patterns = ebisu_utils.constructListFromJsonData(
+            jsonMap["patterns"], (data) => data);
 
-  // end <class FilenameFilterSet>
-  Id _id;
-  List<String> _include;
-  List<String> _exclude;
+  // end <class Filter>
+  final Id _id;
+  final bool _isInclusion;
+  final List<String> _patterns;
 }
 
 /// Comparable to *prune* flags on *updatedb* linux command.
@@ -223,10 +230,10 @@ abstract class IndexPersister {
   Future removeAllIndices();
   Future removeIndex(Id id);
 
-  Future<List<FilenameFilterSet>> get filenameFilterSets;
-  Future persistFilenameFilterSet(FilenameFilterSet set);
-  Future removeFilenameFilterSet(Id setId);
-  Future removeAllFilenameFilterSets();
+  Future<List<Filter>> get filters;
+  Future persistFilter(Filter filter);
+  Future removeFilter(Id filterId);
+  Future removeAllFilters();
 
   // end <class IndexPersister>
   Future _connectFuture;
@@ -315,18 +322,18 @@ class Indexer {
       indexUpdater.findPaths(index, filters);
 
   Future<Index> lookupIndex(Id id) => indexPersister.lookupIndex(id);
-  Future<List<FilenameFilterSet>> get filenameFilterSets =>
-      indexPersister.filenameFilterSets;
-  Future persistFilenameFilterSet(FilenameFilterSet set) =>
-      indexPersister.persistFilenameFilterSet(set);
-  Future removeFilenameFilterSet(Id setId) =>
-      indexPersister.removeFilenameFilterSet(setId);
+  Future<List<Filter>> get filters =>
+      indexPersister.filters;
+  Future persistFilter(Filter filter) =>
+      indexPersister.persistFilter(filter);
+  Future removeFilter(Id filterId) =>
+      indexPersister.removeFilter(filterId);
 
-  Future removeAllFilenameFilterSets() =>
-      indexPersister.removeAllFilenameFilterSets();
+  Future removeAllFilters() =>
+      indexPersister.removeAllFilters();
 
   Future removeAllItems() =>
-      removeAllIndices().then((_) => removeAllFilenameFilterSets());
+      removeAllIndices().then((_) => removeAllFilters());
 
   // end <class Indexer>
 }
@@ -335,5 +342,9 @@ class Indexer {
 const commonPruneNames = const ['.svn', '.git', '.pub'];
 const emptyPruneSpec = const PruneSpec(const [], const []);
 const emptyFindArgs = const FindArgs(const [], const []);
+
+final _notRegexRe = new RegExp(r'^[\w_.]+$');
+final _filterIdRe = new RegExp(r'^([\w_.]+)\s+(.*)');
+final _whiteSpaceRe = new RegExp(r'\s+');
 
 // end <part index>

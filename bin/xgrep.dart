@@ -368,7 +368,13 @@ emacsSupportFlag: $emacsSupportFlag
       await updateEmacsFile(indexer);
     }
 
-    if (!hasIndices && !hasFilters && positionals.isEmpty) {
+    if(impliesRemoval) {
+      if(!positionals.isEmpty) {
+        exitWith('When removing filters or indices, '
+            'positionals args must be empty');
+      }
+      return removeItems(indexer);
+    } else if (!hasIndices && !hasFilters && positionals.isEmpty) {
       await printIndices(indexer);
       await printFilters(indexer);
     } else {
@@ -394,8 +400,6 @@ emacsSupportFlag: $emacsSupportFlag
               .updateIndex(index)
               .then((_) => announceIndexOpComplete('Updated', index)));
         }
-      } else if (impliesRemoval) {
-        return removeItems(indexer);
       } else if (impliesGrep) {
         final targetIndices = (await matchingIndices(indexer));
         final filters = (await matchingFilters(indexer));
@@ -422,22 +426,17 @@ emacsSupportFlag: $emacsSupportFlag
   createNewFilters(indexer) async {
     final creationFilters = [];
     filterArgs.removeWhere((String arg) {
-      final match = arg.contains('@') && arg.contains(' ');
+      final match = arg.contains(' ');
       if (match) creationFilters.add(arg);
       return match;
     });
 
     if (!creationFilters.isEmpty) {
       creationFilters.forEach((String filterArg) async {
-        final parts = filterArg.split('@');
-        final nameAndIncludes = parts.first.trim().split(' ');
-        final excludes = parts.last.trim().split(' ');
-        final id = idFromString(nameAndIncludes.first);
-        final filter =
-            new FilenameFilterSet(id, nameAndIncludes.sublist(1), excludes);
-        await indexer.persistFilenameFilterSet(filter);
+        final filter = new Filter.fromArg(filterArg);
+        await indexer.persistFilter(filter);
         announceFilterOpComplete('Saved', filter);
-        filterArgs.addAll(['-f', id.snake]);
+        filterArgs.addAll(['-f', filter.id.snake]);
       });
     }
   }
@@ -457,7 +456,7 @@ emacsSupportFlag: $emacsSupportFlag
     announceIndexOpComplete('Created/updated', index);
   }
 
-  announceFilterOpComplete(String op, FilenameFilterSet filter) {
+  announceFilterOpComplete(String op, Filter filter) {
     print('$op filter *${nameItem(filter)}*');
     printFilenameFilter(filter);
   }
@@ -521,8 +520,8 @@ remove-item requires -i and/or -f specifying named items to remove''');
 
   matchingFilters(Indexer indexer) async {
     if (_filters != null) return _filters;
-    _filters = (await indexer.filenameFilterSets)
-        .where((FilenameFilterSet filter) =>
+    _filters = (await indexer.filters)
+        .where((Filter filter) =>
             filterArgs.any((String s) => isMatch(s, filter.id)))
         .toList();
     _logger.info('Matching filters ${nameItems(_filters).toList()}');
@@ -540,7 +539,7 @@ remove-item requires -i and/or -f specifying named items to remove''');
   });
 
   removeSpecifiedFilters(Indexer indexer) => matchingFilters(indexer).then(
-      (List<FilenameFilterSet> filters) {
+      (List<Filter> filters) {
     _logger.info('Removing filters $filterArgs matching '
         '${nameItems(filters).toList()}');
   });
@@ -549,6 +548,20 @@ remove-item requires -i and/or -f specifying named items to remove''');
     final theIndices = (await indexer.indices);
     List parts = [
       '''
+(defun xg (args)
+  "Run xgrep with all args supplied"
+  (interactive "sEnter args:")
+  (grep (concat "xgrep " args))
+  (set-buffer "*grep*")
+  (rename-buffer (concat "*xg " args "*") t))
+
+(defun xgi (args)
+  "Run xgrep ignoring case with all args supplied"
+  (interactive "sEnter args:")
+  (grep (concat "xgrep -g-i " args))
+  (set-buffer "*grep*")
+  (rename-buffer (concat "*xg " args "*") t))
+
 (defun xgu-* ()
   "Update all xgrep indices"
   (interactive)
@@ -563,6 +576,13 @@ remove-item requires -i and/or -f specifying named items to remove''');
   "Do an xgrep -i $snakeId with additional args. Look for things in the index"
   (interactive "sEnter args:")
   (grep (concat "xgrep -i $snakeId " args))
+  (set-buffer "*grep*")
+  (rename-buffer (concat "*xg-$eid " args "*") t))
+
+(defun xgi-$eid (args)
+  "Do an xgrep -i $snakeId with additional args ignoring case. Look for things in the index"
+  (interactive "sEnter args:")
+  (grep (concat "xgrep -i $snakeId -g-i " args))
   (set-buffer "*grep*")
   (rename-buffer (concat "*xg-$eid " args "*") t))
 
@@ -618,7 +638,7 @@ xgrep -i my_dart \\
 
   // end <class ArgProcessor>
   List<Index> _indices;
-  List<FilenameFilterSet> _filters;
+  List<Filter> _filters;
 }
 
 main(List<String> args) async {
@@ -666,14 +686,13 @@ printIndex(Index index) {
   });
 }
 
-printFilenameFilter(FilenameFilterSet ffs) {
-  print('---------- ${nameItem(ffs)} ----------');
-  display(String s) => FilenameFilterSet.interpret(s);
-  ffs.include.forEach((String s) {
-    print('  include: ${display(s)}');
-  });
-  ffs.exclude.forEach((String s) {
-    print('  exclude: ${display(s)}');
+printFilenameFilter(Filter filter) {
+  print(filter.toJson());
+  final type = filter.isInclusion? '+':'-';
+  print('.......... $type${nameItem(filter)} ..........');
+  display(String s) => Filter.interpret(s);
+  filter.patterns.forEach((String s) {
+    print('  pattern: ${display(s)}');
   });
 }
 
@@ -696,13 +715,13 @@ xgrep -i my_dart \\
 
 printFilters(indexer) async {
   print('**** Current Filters ****');
-  final filters = await indexer.filenameFilterSets;
+  final filters = await indexer.filters;
   if (filters.isEmpty) {
     print(r"""
 You have no filters. Consider creating some.
 For example:
 
-xgrep -f 'dart_filter;\.dart$,\.html$,\.yaml$;\.js$,.*~$'
+xgrep -f 'dart_filter + \.dart$ \.html$ \.yaml$'
 
 """);
   } else {

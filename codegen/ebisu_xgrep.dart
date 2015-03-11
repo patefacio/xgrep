@@ -113,7 +113,7 @@ All arguments for processing as a unit.
           member('grep_args')..type = 'List<String>',
 
           member('indices')..type = 'List<Index>'..access = IA,
-          member('filters')..type = 'List<FilenameFilterSet>'..access = IA,
+          member('filters')..type = 'List<Filter>'..access = IA,
           member('path_map')..type = 'Map<String,PruneSpec>'..classInit = {},
         ]
 
@@ -248,6 +248,7 @@ regex expressions.
     ]
     ..testLibraries = [
       library('test_index'),
+      library('test_filter'),
       library('test_mongo_index_persister')
       ..includeLogger = true,
       library('test_mlocate_index_updater')
@@ -270,28 +271,21 @@ regex expressions.
       ..parts = [
         part('index')
         ..classes = [
-          class_('filename_filter_set')
+          class_('filter')
+          ..immutable = true
           ..doc = r"""
-List of regex filters for inclusion/exclusion of
-files on find operation.
-
-So the following:
-
-    FilenameFilterSet([ '\.dart$', '\.yaml$' ], [ '\.js$' ])
-
-would include *dart* and *yaml* files and exclude
-javascript *files*
+A list of patterns and a flag indicating whether this is an inclusion
+filter.
 """
           ..opEquals = true
           ..members = ([
             member('id')
             ..doc = 'Uniquely identifies the filter set'
             ..type = 'Id',
-            member('include')
-            ..doc = 'List of string patterns interpreted as RegExp to *include*'
-            ..type = 'List<String>',
-            member('exclude')
-            ..doc = 'List of string patterns interpreted as RegExp to *exclude*'
+            member('is_inclusion')
+            ..classInit = false,
+            member('patterns')
+            ..doc = 'List of string patterns comprising the filter'
             ..type = 'List<String>',
           ].map((m) => m..access = RO)).toList(),
           class_('prune_spec')
@@ -376,7 +370,7 @@ information in *MongoDB*'''
             member('uri')..isFinal = true..access = RO,
             member('db')..access = IA..type = 'Db',
             member('indices')..access = IA..type = 'DbCollection',
-            member('filter_sets')..access = IA..type = 'DbCollection',
+            member('filters')..access = IA..type = 'DbCollection',
           ]
         ],
         part('mlocate_index_updater')

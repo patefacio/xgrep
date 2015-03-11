@@ -15,6 +15,7 @@ void main(List<String> args) {
   //TODO: Figure this out: addTask('docs', createDocGenTask(_getLibs));
   addTask('analyze_test', createAnalyzerTask([
     "test/test_index.dart",
+    "test/test_filter.dart",
     "test/test_mongo_index_persister.dart",
     "test/test_mlocate_index_updater.dart",
     "test/test_xgrep_script.dart"

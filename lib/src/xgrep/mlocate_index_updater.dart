@@ -47,25 +47,49 @@ class MlocateIndexUpdater extends IndexUpdater {
       [List filters = const []]) async {
     final command = mlocateCommand(index);
     _logger.info('Running $command');
-    final process = await Process.start(command.first, command.sublist(1));
 
-    bool isAllowed(String path) {
-      var excluded = false;
-      for (final filter in filters) {
-        if (filter.excludePath(path)) {
-          _logger.info('Filtered $path on ${filter.id}=>${filter.exclude}');
-          excluded = true;
-          break;
+    final exclusionPatterns = [];
+    final inclusionPatterns = [];
+
+    filters.forEach((Filter f) {
+      final isInclusion = f.isInclusion;
+      for(final pattern in f.patterns) {
+        if(isInclusion) {
+          inclusionPatterns.add(Filter.interpret(pattern));
+        } else {
+          exclusionPatterns.add(Filter.interpret(pattern));
         }
       }
-      return !excluded;
+    });
+
+    final process = await Process.start(command.first, command.sublist(1));
+
+    bool isIncluded(String path) {
+      var included = false;
+      if(inclusionPatterns.isEmpty) {
+        included = true;
+      } else {
+        included = inclusionPatterns.any((pattern) => path.contains(pattern));
+      }
+
+      if(included) {
+        for(final pattern in exclusionPatterns) {
+          included = !path.contains(pattern);
+          if(!included) {
+            _logger.info('Filtered $path on pattern $pattern');
+            break;
+          }
+        }
+      }
+
+      return included;
     }
 
     return process.stdout
         .transform(new Utf8Decoder())
         .transform(new LineSplitter())
         .where((String path) =>
-            (!FileSystemEntity.isDirectorySync(path) && isAllowed(path)));
+            (!FileSystemEntity.isDirectorySync(path) && isIncluded(path)));
   }
 
   List<String> _pruneArgs(PruneSpec pruneSpec) {

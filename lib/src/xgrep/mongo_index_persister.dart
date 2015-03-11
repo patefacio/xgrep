@@ -27,7 +27,7 @@ class MongoIndexPersister extends IndexPersister {
     _db = new Db(uri);
     return _db.open().then((c) {
       _indices = _db.collection(indexCollectionName);
-      _filterSets = _db.collection(filtersCollectionName);
+      _filters = _db.collection(filtersCollectionName);
       return this;
     });
   }
@@ -104,42 +104,42 @@ When adding paths provide either:
       .then((mongoResult) => _convertResult(mongoResult,
           () => 'Unable to remove index ${indexId.snake}', indexId)));
 
-  Future<List<FilenameFilterSet>> get filenameFilterSets {
-    _logger.info('Retrieving filename filter sets from mongo');
-    return connectFuture.then((c) => _filterSets
+  Future<List<Filter>> get filters {
+    _logger.info('Retrieving filters from mongo');
+    return connectFuture.then((c) => _filters
         .find({})
         .toList()
         .then((List<Map> data) => data
-            .map((Map datum) => FilenameFilterSet.fromJson(datum))
+            .map((Map datum) => Filter.fromJson(datum))
             .toList()));
   }
 
-  Future persistFilenameFilterSet(FilenameFilterSet filterSet) {
-    _logger.info('Persisting filename filter set $filterSet');
-    return connectFuture.then((c) => _filterSets
-        .save(filterSet.toJson())
+  Future persistFilter(Filter filter) {
+    _logger.info('Persisting filter set $filter');
+    return connectFuture.then((c) => _filters
+        .save(filter.toJson())
         .then((mongoResult) => _convertResult(mongoResult,
-            () => 'Unable to persist filename filter set $filterSet',
-            filterSet)));
+            () => 'Unable to persist filter $filter',
+            filter)));
   }
 
-  Future removeFilenameFilterSet(Id filterId) => connectFuture.then(
-      (c) => _filterSets
+  Future removeFilter(Id filterId) => connectFuture.then(
+      (c) => _filters
           .remove({'_id': filterId.snake})
           .then((mongoResult) => _convertResult(mongoResult,
-              () => 'Unable to remove filter set ${filterId.snake}',
+              () => 'Unable to remove filter ${filterId.snake}',
               filterId)));
 
-  Future removeAllFilenameFilterSets() {
+  Future removeAllFilters() {
     _logger.info('Removing all filters');
-    return connectFuture.then((c) => _filterSets.remove({}));
+    return connectFuture.then((c) => _filters.remove({}));
   }
 
   // end <class MongoIndexPersister>
   final String _uri;
   Db _db;
   DbCollection _indices;
-  DbCollection _filterSets;
+  DbCollection _filters;
 }
 // custom <part mongo_index_persister>
 
