@@ -36,7 +36,10 @@ Filter should be: filter_id [+-] pattern ...
 
     final id = idFromString(match.group(1));
     var remaining = match.group(2).trim();
+    return new Filter._fromArgText(id, remaining);
+  }
 
+  factory Filter._fromArgText(Id id, String remaining) {
     bool isInclusion = remaining[0] != '-';
     if (!isInclusion || remaining[0] == '+') {
       remaining = remaining.substring(1).trim();
@@ -47,6 +50,11 @@ Filter should be: filter_id [+-] pattern ...
     parts.forEach((s) => interpret(s));
     return new Filter(id, isInclusion, parts);
   }
+
+  static final _anonymousId = new Id('anon');
+
+  factory Filter.anonymous(String arg) =>
+      new Filter._fromArgText(_anonymousId, arg);
 
   Map toJson() => {
     "_id": _id.snake,

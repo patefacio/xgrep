@@ -201,7 +201,7 @@ persists a new filter named *ignore* that excludes tilda files,
 *.gitignore* and any .git or .pub subfolders.
 
 ''', defaultsTo: null, allowMultiple: true, abbr: 'f', allowed: null);
-    _parser.addOption('immediate-filter', help: r'''
+    _parser.addOption('anonymous-filter', help: r'''
 Use the filter specified to restrict files searched
 The format is the same as (-f) except it is not named
 and therefore will be used but not persisted.
@@ -239,7 +239,7 @@ Select log level from:
     result['emacs-support'] = argResults['emacs-support'];
     result['display-filters'] = argResults['display-filters'];
     result['filter'] = argResults['filter'];
-    result['immediate-filter'] = argResults['immediate-filter'];
+    result['anonymous-filter'] = argResults['anonymous-filter'];
     result['grep-args'] = argResults['grep-args'];
     result['help'] = argResults['help'];
     result['log-level'] = argResults['log-level'];
@@ -282,7 +282,7 @@ class ArgProcessor {
   List<String> pruneNameArgs;
   List<String> prunePathArgs;
   List<String> filterArgs;
-  List<String> immediateFilterArgs;
+  List<String> anonymousFilterArgs;
   bool updateFlag;
   bool removeItemFlag;
   bool removeAllFlag;
@@ -301,7 +301,7 @@ class ArgProcessor {
         pruneNameArgs = options['prune-name'],
         prunePathArgs = options['prune-path'],
         filterArgs = options['filter'],
-        immediateFilterArgs = options['immediate-filter'],
+        anonymousFilterArgs = options['anonymous-filter'],
         grepArgs = options['grep-args'],
         updateFlag = options['update'],
         removeItemFlag = options['remove-item'],
@@ -316,7 +316,7 @@ pathArgs: $pathArgs
 pruneNameArgs: $pruneNameArgs
 prunePathArgs: $prunePathArgs
 filterArgs: $filterArgs
-immediateFilterArgs: $immediateFilterArgs
+anonymousFilterArgs: $anonymousFilterArgs
 update: $updateFlag
 removeItem: $removeItemFlag
 removeAll: $removeAllFlag
@@ -501,6 +501,12 @@ remove-item requires -i and/or -f specifying named items to remove''');
         .where((Filter filter) =>
             filterArgs.any((String s) => isMatch(s, filter.id)))
         .toList();
+
+    if (!anonymousFilterArgs.isEmpty) {
+      for (final filterArg in anonymousFilterArgs) {
+        _filters.add(new Filter.anonymous(filterArg));
+      }
+    }
     _logger.info('Matching filters ${nameItems(_filters).toList()}');
     return _filters;
   }

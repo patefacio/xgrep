@@ -92,7 +92,7 @@ All arguments for processing as a unit.
           member('prune_name_args')..type = 'List<String>',
           member('prune_path_args')..type = 'List<String>',
           member('filter_args')..type = 'List<String>',
-          member('immediate_filter_args')..type = 'List<String>',
+          member('anonymous_filter_args')..type = 'List<String>',
 
           // Flags/commands ars
           member('update_flag')..type = 'bool',
@@ -212,7 +212,7 @@ persists a new filter named *ignore* that excludes tilda files,
         ..type = ArgType.STRING
         ..abbr = 'f'
         ..isMultiple = true,
-        scriptArg('immediate_filter')
+        scriptArg('anonymous_filter')
         ..doc = r"""
 Use the filter specified to restrict files searched
 The format is the same as (-f) except it is not named

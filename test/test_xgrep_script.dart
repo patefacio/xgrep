@@ -175,6 +175,10 @@ main() {
         /// Should have no hits since all files have been filtered
         [':\d+.*class']);
 
+    addTest('does anonymous filtering', ['-i', '.*', "-F'- .*'", 'class'], [],
+        /// Should have no hits since all files have been filtered
+        [':\d+.*class']);
+
     addTest('removal by pattern hits multiple indices', [
       '-i',
       'test_index.*',

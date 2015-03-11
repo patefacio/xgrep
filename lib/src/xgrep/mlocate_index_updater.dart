@@ -75,7 +75,8 @@ class MlocateIndexUpdater extends IndexUpdater {
       if (included) {
         for (final pattern in exclusionPatterns) {
           included = !path.contains(pattern);
-          _logger.finest(() => 'Checking $path on pattern $pattern => $included');
+          _logger
+              .finest(() => 'Checking $path on pattern $pattern => $included');
           if (!included) {
             _logger.info(() => 'Filtered $path on pattern $pattern');
             break;
