@@ -368,8 +368,8 @@ emacsSupportFlag: $emacsSupportFlag
       await updateEmacsFile(indexer);
     }
 
-    if(impliesRemoval) {
-      if(!positionals.isEmpty) {
+    if (impliesRemoval) {
+      if (!positionals.isEmpty) {
         exitWith('When removing filters or indices, '
             'positionals args must be empty');
       }
@@ -688,7 +688,7 @@ printIndex(Index index) {
 
 printFilenameFilter(Filter filter) {
   print(filter.toJson());
-  final type = filter.isInclusion? '+':'-';
+  final type = filter.isInclusion ? '+' : '-';
   print('.......... $type${nameItem(filter)} ..........');
   display(String s) => Filter.interpret(s);
   filter.patterns.forEach((String s) {

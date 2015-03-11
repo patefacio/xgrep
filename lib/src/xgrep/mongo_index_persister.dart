@@ -109,26 +109,22 @@ When adding paths provide either:
     return connectFuture.then((c) => _filters
         .find({})
         .toList()
-        .then((List<Map> data) => data
-            .map((Map datum) => Filter.fromJson(datum))
-            .toList()));
+        .then((List<Map> data) =>
+            data.map((Map datum) => Filter.fromJson(datum)).toList()));
   }
 
   Future persistFilter(Filter filter) {
     _logger.info('Persisting filter set $filter');
     return connectFuture.then((c) => _filters
         .save(filter.toJson())
-        .then((mongoResult) => _convertResult(mongoResult,
-            () => 'Unable to persist filter $filter',
-            filter)));
+        .then((mongoResult) => _convertResult(
+            mongoResult, () => 'Unable to persist filter $filter', filter)));
   }
 
-  Future removeFilter(Id filterId) => connectFuture.then(
-      (c) => _filters
-          .remove({'_id': filterId.snake})
-          .then((mongoResult) => _convertResult(mongoResult,
-              () => 'Unable to remove filter ${filterId.snake}',
-              filterId)));
+  Future removeFilter(Id filterId) => connectFuture.then((c) => _filters
+      .remove({'_id': filterId.snake})
+      .then((mongoResult) => _convertResult(mongoResult,
+          () => 'Unable to remove filter ${filterId.snake}', filterId)));
 
   Future removeAllFilters() {
     _logger.info('Removing all filters');

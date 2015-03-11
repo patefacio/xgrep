@@ -36,13 +36,14 @@ addTest(testName, scriptArgs, required, [List requiredNot = const []]) => test(
   }
   required.forEach((var s) {
     final match = output.contains(s);
-    if (!match)
-      print('$testName: FAIL [$scriptArgs] ====\n$output\n====\nhas no $s');
+    if (!match) print(
+        '$testName: FAIL [$scriptArgs] ====\n$output\n====\nhas no $s');
     expect(match, true);
   });
   requiredNot.forEach((var s) {
     final match = output.contains(s);
-    if (match) print('$testName: FAIL [$scriptArgs] ====\n$output\n====\nhas $s');
+    if (match) print(
+        '$testName: FAIL [$scriptArgs] ====\n$output\n====\nhas $s');
     expect(match, false);
   });
 }));
@@ -161,10 +162,8 @@ main() {
       r'pattern: JSRegExp: pattern=\.(?:hpp|cpp|c|h|inl|cxx)$ flags=',
     ]);
 
-    addTest('patterns for filters work', ['-f', '.*'], [
-      '... +dart',
-      '... -cpp',
-    ]);
+    addTest(
+        'patterns for filters work', ['-f', '.*'], ['... +dart', '... -cpp',]);
 
     // addTest('filters actually filter', [
     //   '-i',

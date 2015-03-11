@@ -12,9 +12,9 @@ main() {
 // custom <main>
 
   group('filter basics', () {
-
     test('json', () {
-      var filter = new Filter(idFromString('f'), true, [ r'\.dart$', r'\.html$' ]);
+      var filter =
+          new Filter(idFromString('f'), true, [r'\.dart$', r'\.html$']);
       expect(Filter.fromJson(filter.toJson()), filter);
     });
 
@@ -35,19 +35,17 @@ main() {
       try {
         var filter = new Filter.fromArg(r'some_dart + \.d(art$ \.html$ \.js');
         assert('expected throw');
-      } on Exception catch(e) {
+      } on Exception catch (e) {
         expect(e is FormatException, true);
       }
       try {
         var filter = new Filter.fromArg(r'?some_dart + \.dart$');
         assert('expected throw');
-      } on Exception catch(e) {
+      } on Exception catch (e) {
         expect(e.message.contains('arg is not valid'), true);
       }
     });
-
   });
-
 
 // end <main>
 

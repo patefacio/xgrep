@@ -53,8 +53,8 @@ class MlocateIndexUpdater extends IndexUpdater {
 
     filters.forEach((Filter f) {
       final isInclusion = f.isInclusion;
-      for(final pattern in f.patterns) {
-        if(isInclusion) {
+      for (final pattern in f.patterns) {
+        if (isInclusion) {
           inclusionPatterns.add(Filter.interpret(pattern));
         } else {
           exclusionPatterns.add(Filter.interpret(pattern));
@@ -66,16 +66,16 @@ class MlocateIndexUpdater extends IndexUpdater {
 
     bool isIncluded(String path) {
       var included = false;
-      if(inclusionPatterns.isEmpty) {
+      if (inclusionPatterns.isEmpty) {
         included = true;
       } else {
         included = inclusionPatterns.any((pattern) => path.contains(pattern));
       }
 
-      if(included) {
-        for(final pattern in exclusionPatterns) {
+      if (included) {
+        for (final pattern in exclusionPatterns) {
           included = !path.contains(pattern);
-          if(!included) {
+          if (!included) {
             _logger.info('Filtered $path on pattern $pattern');
             break;
           }

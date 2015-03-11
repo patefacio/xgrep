@@ -38,12 +38,11 @@ Filter should be: filter_id [+-] pattern ...
     var remaining = match.group(2).trim();
 
     bool isInclusion = remaining[0] != '-';
-    if(!isInclusion || remaining[0] == '+') {
+    if (!isInclusion || remaining[0] == '+') {
       remaining = remaining.substring(1).trim();
     }
 
-    final parts = remaining.split(_whiteSpaceRe)
-      .map((s) => s.trim()).toList();
+    final parts = remaining.split(_whiteSpaceRe).map((s) => s.trim()).toList();
     /// Following is to check taht if has special characters they are valid re's
     parts.forEach((s) => interpret(s));
     return new Filter(id, isInclusion, parts);
@@ -322,18 +321,13 @@ class Indexer {
       indexUpdater.findPaths(index, filters);
 
   Future<Index> lookupIndex(Id id) => indexPersister.lookupIndex(id);
-  Future<List<Filter>> get filters =>
-      indexPersister.filters;
-  Future persistFilter(Filter filter) =>
-      indexPersister.persistFilter(filter);
-  Future removeFilter(Id filterId) =>
-      indexPersister.removeFilter(filterId);
+  Future<List<Filter>> get filters => indexPersister.filters;
+  Future persistFilter(Filter filter) => indexPersister.persistFilter(filter);
+  Future removeFilter(Id filterId) => indexPersister.removeFilter(filterId);
 
-  Future removeAllFilters() =>
-      indexPersister.removeAllFilters();
+  Future removeAllFilters() => indexPersister.removeAllFilters();
 
-  Future removeAllItems() =>
-      removeAllIndices().then((_) => removeAllFilters());
+  Future removeAllItems() => removeAllIndices().then((_) => removeAllFilters());
 
   // end <class Indexer>
 }
