@@ -165,21 +165,21 @@ main() {
     addTest(
         'patterns for filters work', ['-f', '.*'], ['... +dart', '... -cpp',]);
 
-    // addTest('filters actually filter', [
-    //   '-i',
-    //   '.*',
-    //   '-f',
-    //   'exclude_all @ .*',
-    //   'class'
-    // ], ['Saved filter *exclude_all*',],
-    //     /// Should have no hits since all files have been filtered
-    //     [':\d+.*class']);
+    addTest('filters actually filter', [
+      '-i',
+      '.*',
+      '-f',
+      'exclude_all - .*',
+      'class'
+    ], ['Saved filter *exclude_all*',],
+        /// Should have no hits since all files have been filtered
+        [':\d+.*class']);
 
-    // addTest('removal by pattern hits multiple indices', [
-    //   '-i',
-    //   'test_index.*',
-    //   '-r'
-    // ], ['Removed index *test_index*', 'Removed index *test_index2*']);
+    addTest('removal by pattern hits multiple indices', [
+      '-i',
+      'test_index.*',
+      '-r'
+    ], ['Removed index *test_index*', 'Removed index *test_index2*']);
   });
 
 // end <main>

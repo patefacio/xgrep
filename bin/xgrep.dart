@@ -1,7 +1,7 @@
 #!/usr/bin/env dart
-/// A script for indexing directories and running find/grep operations
-/// on those indices. All indices and filters are named and stored in
-/// a database so they may be reused. Names of indices must be
+/// A script for indexing directories and running find/grep operations on
+/// those indices. All indices and filters are named and stored in a
+/// database so they may be reused. Names of indices and filters must be
 /// *snake_case*, eg (-i cpp_code) and (-f ignore_objs).
 ///
 /// xargs.dart [OPTIONS] [PATTERN...]
@@ -22,26 +22,18 @@
 ///
 /// # Filter Creation
 ///
-/// To create a filter, use the filter option (i.e. -f) and define the
-/// filter in-place with the following format:
+/// Note: the same flag (-f) is used to create filters and to reference
+/// filters for searching. The only difference is the format dictates the
+/// intent. Any spaces in the argument indicate a desire to create a
+/// filter. See [-f] description below.
 ///
-///  -f'index_id [string_or_regex ... ] @ [string_or_regex ... ]'
-///
-/// Where the first [string_or_regex ...] is a space delimiited list
-/// of string or regexes defining an inclusion filter. Similarly, the
-/// second [strng_or_regex ...] is a space delimited list of string
-/// or regexes defining an exclusion filter.
-///
-/// For example:
-///
-///  -f'dart \.dart$ \.html$ \.yaml$ @ \.js$ .*~$'
-///
-/// persists a new filter named *dart* that includes *.dart*,
-/// *.html* and *.yaml* files, but exludes *.js* and tilda files.
+/// # Updating
 ///
 /// If one or more indices is supplied with the update flag set, the
 /// databases for the index/indices will be updated (e.g. *updatedb*
 /// will be called to re-index)
+///
+/// # Searching
 ///
 /// If one or more indices is supplied with zero or more filter arguments
 /// and one or more remaining positional arguments, the positional
@@ -68,9 +60,9 @@ ArgParser _parser;
 //! The comment and usage associated with this script
 void _usage() {
   print(r'''
-A script for indexing directories and running find/grep operations
-on those indices. All indices and filters are named and stored in
-a database so they may be reused. Names of indices must be
+A script for indexing directories and running find/grep operations on
+those indices. All indices and filters are named and stored in a
+database so they may be reused. Names of indices and filters must be
 *snake_case*, eg (-i cpp_code) and (-f ignore_objs).
 
 xargs.dart [OPTIONS] [PATTERN...]
@@ -91,26 +83,18 @@ creating an index database)
 
 # Filter Creation
 
-To create a filter, use the filter option (i.e. -f) and define the
-filter in-place with the following format:
+Note: the same flag (-f) is used to create filters and to reference
+filters for searching. The only difference is the format dictates the
+intent. Any spaces in the argument indicate a desire to create a
+filter. See [-f] description below.
 
- -f'index_id [string_or_regex ... ] @ [string_or_regex ... ]'
-
-Where the first [string_or_regex ...] is a space delimiited list
-of string or regexes defining an inclusion filter. Similarly, the
-second [strng_or_regex ...] is a space delimited list of string
-or regexes defining an exclusion filter.
-
-For example:
-
- -f'dart \.dart$ \.html$ \.yaml$ @ \.js$ .*~$'
-
-persists a new filter named *dart* that includes *.dart*,
-*.html* and *.yaml* files, but exludes *.js* and tilda files.
+# Updating
 
 If one or more indices is supplied with the update flag set, the
 databases for the index/indices will be updated (e.g. *updatedb*
 will be called to re-index)
+
+# Searching
 
 If one or more indices is supplied with zero or more filter arguments
 and one or more remaining positional arguments, the positional
@@ -186,53 +170,46 @@ to be excluded
 
 ''', defaultsTo: null, allowMultiple: true, abbr: 'X', allowed: null);
     _parser.addOption('filter', help: r'''
-Specifies a filter. If the argument is a single
-identifier it must repsent a filter stored in the
-database, to be used in the find/grep operation.
+Used to create a filter or reference one or more filters.
+If the argument has any white space it is attempting to
+create a single filter (with space delimited patterns).
+Otherwise it is referencing one or more filters. If there
+are only [\w_] characters, it is naming a single filter.
+Otherwise it is a deemed a pattern and finds all matching
+filters. This way you can do -f'c.*' and pull in all
+filters that start with 'c'.
 
-If the argument is more than just an identifier it is
-considered a filter definition and must be of the
-form:
+For filter creation, the argument must be of the form:
 
- filter_id [ str_or_regex ...] @  [ str_or_regex ...]
+ -f'filter_id [+-] PATTERN... '
 
-Both inclusions and exclusions are space separated
-fields representing patterns to include/exclude. If a
-pattern has non-word characters (i.e. not [\w_.]) it
-is assumed to be a regex and the filtering is matched
-case insensitively. Otherwise the field is a string
-and is matched exactly.
+Where the first word names the filter (e.g. filter_id), the '+'
+indicates desire to include, the '-' a desire to exclude. The
+following patterns are space delimited and can be either plain string
+or regex. If it contains only [\w_.] characters it is a string,
+otherwise it is considered a regex and must parse correctly.
+For example:
 
-Examples:
+ -f'dart + \.dart$ \.html$ \.yaml$'
 
--f 'dart \.dart$ \.html$ \.yaml$ @ \.js$ .*~$'
--f 'cpp_filter \.(?:hpp|cpp|c|h|inl|cxx)$@'
+persists a new filter named *dart* that includes *.dart*,
+*.html* and *.yaml* files. The following
 
-The first persists a filter named *dart_filter* that
-includes dart, html and yaml files and excludes js
-and tilda files.
+ -f'ignore - ~$ .gitignore /\.git\b /\.pub\b'
 
--i my_oss -f dart_filter -f cpp_filter join split
-
-These flags will search index *my_oss* filtering to
-*dart_filter* and *cpp_filter* looking for the words
-*join* and *split*
+persists a new filter named *ignore* that excludes tilda files,
+*.gitignore* and any .git or .pub subfolders.
 
 ''', defaultsTo: null, allowMultiple: true, abbr: 'f', allowed: null);
     _parser.addOption('immediate-filter', help: r'''
 Use the filter specified to restrict files searched
-The format must be two fields separated by a single
-semicolon where each field represents a pattern:
+The format is the same as (-f) except it is not named
+and therefore will be used but not persisted.
 
--F '\.(?:hpp|cpp|c|h|inl|cxx)$@'
--F '@\.(?:\.obj|\.a)'
+ -F'- ~$ .gitignore /\.git\b /\.pub\b'
 
-The first says to *include* some c++ type files and
-leaves the *exclude* field blank. The second says to
-exclude .obj and .a files See [create_filter] option
-for more on how the patterns are interpreted. Note:
-the use of semicolon prevents collisions with group
-regex expressions.
+will filter out from the current search command tilda, .gitignore
+files and .git and .pub folders.
 
 ''', defaultsTo: null, allowMultiple: true, abbr: 'F', allowed: null);
     _parser.addOption('grep-args', help: r'''
