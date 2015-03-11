@@ -26,12 +26,14 @@ void main() {
       script('xgrep')
       ..isAsync = true
       ..doc = r"""
+# XGrep
+
 A script for indexing directories and running find/grep operations on
 those indices. All indices and filters are named and stored in a
 database so they may be reused. Names of indices and filters must be
 *snake_case*, eg (-i cpp_code) and (-f ignore_objs).
 
-xargs.dart [OPTIONS] [PATTERN...]
+    xargs.dart [OPTIONS] [PATTERN...]
 
 If no arguments are provided, a list of existing indices and filters
 with their descriptions will be displayed.
@@ -39,7 +41,7 @@ with their descriptions will be displayed.
 If one or more indices or filters is supplied without other arguments
 those item descriptions will be displayed.
 
-# Index Creation
+## Index Creation
 
 To create an index, provide a single -i argument and one or more path
 arguments, with optional prune arguments. See [--path],
@@ -47,20 +49,20 @@ arguments, with optional prune arguments. See [--path],
 persisted and the actual index is created - (e.g. updatedb will run
 creating an index database)
 
-# Filter Creation
+## Filter Creation
 
 Note: the same flag (-f) is used to create filters and to reference
 filters for searching. The only difference is the format dictates the
 intent. Any spaces in the argument indicate a desire to create a
 filter. See [-f] description below.
 
-# Updating
+## Updating
 
 If one or more indices is supplied with the update flag set, the
 databases for the index/indices will be updated (e.g. *updatedb*
 will be called to re-index)
 
-# Searching
+## Searching
 
 If one or more indices is supplied with zero or more filter arguments
 and one or more remaining positional arguments, the positional
@@ -98,7 +100,8 @@ All arguments for processing as a unit.
           member('update_flag')..type = 'bool',
           member('remove_item_flag')..type = 'bool',
           member('remove_all_flag')..type = 'bool',
-          member('list_flag')..type = 'bool',
+          member('list_items_flag')..type = 'bool',
+          member('list_files_flag')..type = 'bool',
           member('display_filters_flag')..type = 'bool',
           member('emacs_support_flag')..type = 'bool',
 
@@ -159,13 +162,22 @@ to be excluded
         ..type = ArgType.STRING
         ..isFlag = true
         ..abbr = 'R',
-        scriptArg('list')
+        scriptArg('list_items')
         ..doc = '''
 For any indices or filters provided, list associated
-items. For indices it lists all files, for filters
+items. For indices it lists the definition, for filters
 lists the details.  Effectively *find* on the index
-and print on filter.'''
+and print on filter. If any indices or filters
+are provided and no positional arguments provided,
+this is the default action.
+'''
         ..abbr = 'l'
+        ..isFlag = true,
+        scriptArg('list_files')
+        ..doc = '''
+For any indices/filters provided, list associated
+files. Effectively the associated *find* operation'''
+        ..abbr = 'L'
         ..isFlag = true,
         scriptArg('emacs_support')
         ..doc = r'''

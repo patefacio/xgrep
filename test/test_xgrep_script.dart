@@ -92,7 +92,7 @@ main() {
       '-u'
     ], ['Updated index *test_index*']);
 
-    addTest('named -i with -l lists files', ['-i', 'test_index', '-l'], [
+    addTest('named -i with -L lists files', ['-i', 'test_index', '-L'], [
       'test_xgrep_script.dart'
     ]);
 
@@ -103,7 +103,7 @@ main() {
     addTest('named -i with pattern works', [
       '-i',
       't.*',
-      '-l'
+      '-L'
     ], ['test_xgrep_script.dart']);
 
     addTest('named -i with -r removes', ['-i', 't.*', '-r'], [

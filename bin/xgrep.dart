@@ -1,10 +1,12 @@
 #!/usr/bin/env dart
+/// # XGrep
+///
 /// A script for indexing directories and running find/grep operations on
 /// those indices. All indices and filters are named and stored in a
 /// database so they may be reused. Names of indices and filters must be
 /// *snake_case*, eg (-i cpp_code) and (-f ignore_objs).
 ///
-/// xargs.dart [OPTIONS] [PATTERN...]
+///     xargs.dart [OPTIONS] [PATTERN...]
 ///
 /// If no arguments are provided, a list of existing indices and filters
 /// with their descriptions will be displayed.
@@ -12,7 +14,7 @@
 /// If one or more indices or filters is supplied without other arguments
 /// those item descriptions will be displayed.
 ///
-/// # Index Creation
+/// ## Index Creation
 ///
 /// To create an index, provide a single -i argument and one or more path
 /// arguments, with optional prune arguments. See [--path],
@@ -20,20 +22,20 @@
 /// persisted and the actual index is created - (e.g. updatedb will run
 /// creating an index database)
 ///
-/// # Filter Creation
+/// ## Filter Creation
 ///
 /// Note: the same flag (-f) is used to create filters and to reference
 /// filters for searching. The only difference is the format dictates the
 /// intent. Any spaces in the argument indicate a desire to create a
 /// filter. See [-f] description below.
 ///
-/// # Updating
+/// ## Updating
 ///
 /// If one or more indices is supplied with the update flag set, the
 /// databases for the index/indices will be updated (e.g. *updatedb*
 /// will be called to re-index)
 ///
-/// # Searching
+/// ## Searching
 ///
 /// If one or more indices is supplied with zero or more filter arguments
 /// and one or more remaining positional arguments, the positional
@@ -60,12 +62,14 @@ ArgParser _parser;
 //! The comment and usage associated with this script
 void _usage() {
   print(r'''
+# XGrep
+
 A script for indexing directories and running find/grep operations on
 those indices. All indices and filters are named and stored in a
 database so they may be reused. Names of indices and filters must be
 *snake_case*, eg (-i cpp_code) and (-f ignore_objs).
 
-xargs.dart [OPTIONS] [PATTERN...]
+    xargs.dart [OPTIONS] [PATTERN...]
 
 If no arguments are provided, a list of existing indices and filters
 with their descriptions will be displayed.
@@ -73,7 +77,7 @@ with their descriptions will be displayed.
 If one or more indices or filters is supplied without other arguments
 those item descriptions will be displayed.
 
-# Index Creation
+## Index Creation
 
 To create an index, provide a single -i argument and one or more path
 arguments, with optional prune arguments. See [--path],
@@ -81,20 +85,20 @@ arguments, with optional prune arguments. See [--path],
 persisted and the actual index is created - (e.g. updatedb will run
 creating an index database)
 
-# Filter Creation
+## Filter Creation
 
 Note: the same flag (-f) is used to create filters and to reference
 filters for searching. The only difference is the format dictates the
 intent. Any spaces in the argument indicate a desire to create a
 filter. See [-f] description below.
 
-# Updating
+## Updating
 
 If one or more indices is supplied with the update flag set, the
 databases for the index/indices will be updated (e.g. *updatedb*
 will be called to re-index)
 
-# Searching
+## Searching
 
 If one or more indices is supplied with zero or more filter arguments
 and one or more remaining positional arguments, the positional
@@ -129,12 +133,19 @@ If set will remove any specified indices (-i) or filters (-f)
     _parser.addFlag('remove-all', help: r'''
 Remove all stored indices
 ''', abbr: 'R', defaultsTo: false);
-    _parser.addFlag('list', help: r'''
+    _parser.addFlag('list-items', help: r'''
 For any indices or filters provided, list associated
-items. For indices it lists all files, for filters
+items. For indices it lists the definition, for filters
 lists the details.  Effectively *find* on the index
-and print on filter.
+and print on filter. If any indices or filters
+are provided and no positional arguments provided,
+this is the default action.
+
 ''', abbr: 'l', defaultsTo: false);
+    _parser.addFlag('list-files', help: r'''
+For any indices/filters provided, list associated
+files. Effectively the associated *find* operation
+''', abbr: 'L', defaultsTo: false);
     _parser.addFlag('emacs-support', help: r'''
 Writes emacs file $HOME/.xgrep.el which contains
 functions for running various commands from emacs.
@@ -235,7 +246,8 @@ Select log level from:
     result['update'] = argResults['update'];
     result['remove-item'] = argResults['remove-item'];
     result['remove-all'] = argResults['remove-all'];
-    result['list'] = argResults['list'];
+    result['list-items'] = argResults['list-items'];
+    result['list-files'] = argResults['list-files'];
     result['emacs-support'] = argResults['emacs-support'];
     result['display-filters'] = argResults['display-filters'];
     result['filter'] = argResults['filter'];
@@ -286,7 +298,8 @@ class ArgProcessor {
   bool updateFlag;
   bool removeItemFlag;
   bool removeAllFlag;
-  bool listFlag;
+  bool listItemsFlag;
+  bool listFilesFlag;
   bool displayFiltersFlag;
   bool emacsSupportFlag;
   List<String> grepArgs;
@@ -306,24 +319,12 @@ class ArgProcessor {
         updateFlag = options['update'],
         removeItemFlag = options['remove-item'],
         removeAllFlag = options['remove-all'],
-        listFlag = options['list'],
+        listItemsFlag = options['list-items'],
+        listFilesFlag = options['list-files'],
         displayFiltersFlag = options['display-filters'],
         emacsSupportFlag = options['emacs-support'];
 
-  toString() => """
-indexArgs: $indexArgs
-pathArgs: $pathArgs
-pruneNameArgs: $pruneNameArgs
-prunePathArgs: $prunePathArgs
-filterArgs: $filterArgs
-anonymousFilterArgs: $anonymousFilterArgs
-update: $updateFlag
-removeItem: $removeItemFlag
-removeAll: $removeAllFlag
-list: $listFlag
-displayFilters: $displayFiltersFlag
-emacsSupportFlag: $emacsSupportFlag
-""";
+  toString() => 'ArgProcessor($options, $positionals)';
 
   bool get hasIndices => !indexArgs.isEmpty;
   bool get hasFilters => !filterArgs.isEmpty;
@@ -331,7 +332,10 @@ emacsSupportFlag: $emacsSupportFlag
   bool get impliesGrep => hasIndices && !positionals.isEmpty;
   bool get impliesUpdate => updateFlag;
   bool get impliesRemoval => removeItemFlag || removeAllFlag;
-  bool get impliesListFiles => hasIndices && listFlag;
+  bool get hasItems => hasIndices || hasFilters;
+  bool get impliesListItems => listItemsFlag ||
+    (hasItems && positionals.isEmpty);
+  bool get impliesListFiles => listFilesFlag;
 
   final snakeCharsRe = new RegExp(r'^[\w_]+$');
   isSnake(s) => snakeCharsRe.hasMatch(s);
@@ -383,10 +387,15 @@ emacsSupportFlag: $emacsSupportFlag
         positionals.forEach(
             (String positional) => grepArgs.addAll(['-e', positional]));
         return grepWithIndexer(targetIndices, grepArgs, indexer, filters);
-      } else if (impliesListFiles) {
-        return listFiles(indexer);
-      } else if (hasIndices || hasFilters) {
-        return listItems(indexer);
+      } else {
+
+        if (impliesListItems) {
+          await listItems(indexer);
+        }
+
+        if (impliesListFiles) {
+          await listFiles(indexer);
+        }
       }
     }
   });
@@ -531,6 +540,12 @@ remove-item requires -i and/or -f specifying named items to remove''');
     final theIndices = (await indexer.indices);
     List parts = [
       '''
+(defun xge ()
+  "Run with generate emacs file option, then load the file"
+  (interactive)
+  (shell-command "xgrep -e")
+  (load-file (directory-file-name "~/.xgrep.el")))
+
 (defun xg (args)
   "Run xgrep with all args supplied"
   (interactive "sEnter args:")
