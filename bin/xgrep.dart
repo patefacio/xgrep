@@ -538,7 +538,7 @@ remove-item requires -i and/or -f specifying named items to remove''');
 
   updateEmacsFile(Indexer indexer) async {
     final theIndices = (await indexer.indices);
-    List parts = [
+    final parts = new StringBuffer(
       '''
 (defun xge ()
   "Run with generate emacs file option, then load the file"
@@ -564,12 +564,12 @@ remove-item requires -i and/or -f specifying named items to remove''');
   "Update all xgrep indices"
   (interactive)
   (shell-command "xgrep -i.* -u" "update all xgrep indices"))
-''',
-    ];
+''');
+
     for (final index in theIndices) {
       final snakeId = index.id.snake;
       final eid = index.id.emacs;
-      parts.add('''
+      parts.write('''
 (defun xg-$eid (args)
   "Do an xgrep -i $snakeId with additional args. Look for things in the index"
   (interactive "sEnter args:")
@@ -599,7 +599,7 @@ remove-item requires -i and/or -f specifying named items to remove''');
 ''');
     }
     final efile = join(Platform.environment['HOME'], '.xgrep.el');
-    new File(efile).writeAsStringSync(parts.join('\n'));
+    new File(efile).writeAsStringSync(parts.toString());
     print('Wrote $efile');
   }
 
