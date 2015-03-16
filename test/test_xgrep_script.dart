@@ -28,8 +28,8 @@ runScriptWithArgsInteractive(List<String> args, [interaction(Process)]) async =>
 });
 
 addTest(testName, scriptArgs, required, [List requiredNot = const []]) => test(
-    testName, () async => await runScriptWithArgs(scriptArgs).then(
-        (String output) {
+    testName, () async => await runScriptWithArgs(scriptArgs)
+        .then((String output) {
   if (false) {
     print('--------COMPLETED $testName------');
     print(output);
@@ -66,8 +66,8 @@ main() {
     });
 
     test('index test folder', () async {
-      await runScriptWithArgs(['-i', 'test_index', '-p', '$testFolder']).then(
-          (String output) async {
+      await runScriptWithArgs(['-i', 'test_index', '-p', '$testFolder'])
+          .then((String output) async {
         await Indexer.withIndexer((Indexer indexer) async {
           final indices = await indexer.indices;
           expect(indices.length, 1);
@@ -92,13 +92,16 @@ main() {
       '-u'
     ], ['Updated index *test_index*']);
 
-    addTest('named -i with -L lists files', ['-i', 'test_index', '-L'], [
-      'test_xgrep_script.dart'
-    ]);
+    addTest('named -i with -L lists files', [
+      '-i',
+      'test_index',
+      '-L'
+    ], ['test_xgrep_script.dart']);
 
-    addTest('named -i bad name', ['-i', 'doesnotexist'], [
-      'Could find no matching indexes on [doesnotexist]'
-    ]);
+    addTest('named -i bad name', [
+      '-i',
+      'doesnotexist'
+    ], ['Could find no matching indexes on [doesnotexist]']);
 
     addTest('named -i with pattern works', [
       '-i',
@@ -106,9 +109,11 @@ main() {
       '-L'
     ], ['test_xgrep_script.dart']);
 
-    addTest('named -i with -r removes', ['-i', 't.*', '-r'], [
-      'Removed index *test_index*'
-    ]);
+    addTest('named -i with -r removes', [
+      '-i',
+      't.*',
+      '-r'
+    ], ['Removed index *test_index*']);
 
     addTest('creation honors prune', [
       '-i',

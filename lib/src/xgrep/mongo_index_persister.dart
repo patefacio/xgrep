@@ -39,11 +39,11 @@ class MongoIndexPersister extends IndexPersister {
 
   Future<List<Index>> get indices {
     _logger.info('Retrieving indices from mongo');
-    return connectFuture.then((c) => _indices
-        .find({})
-        .toList()
-        .then((List<Map> data) =>
-            data.map((Map datum) => Index.fromJson(datum)).toList()));
+    return connectFuture
+        .then(
+            (c) => _indices.find({
+    }).toList().then((List<Map> data) =>
+        data.map((Map datum) => Index.fromJson(datum)).toList()));
   }
 
   Future lookupIndex(Id id) => connectFuture.then((c) => _indices
@@ -89,8 +89,8 @@ When adding paths provide either:
     }
   });
 
-  Future removePaths(Id id, List<String> paths) => lookupIndex(id).then(
-      (Index index) {
+  Future removePaths(Id id, List<String> paths) => lookupIndex(id)
+      .then((Index index) {
     if (index != null) {
       paths.forEach((p) => index.paths.remove(p));
       return persistIndex(index);
@@ -106,11 +106,11 @@ When adding paths provide either:
 
   Future<List<Filter>> get filters {
     _logger.info('Retrieving filters from mongo');
-    return connectFuture.then((c) => _filters
-        .find({})
-        .toList()
-        .then((List<Map> data) =>
-            data.map((Map datum) => Filter.fromJson(datum)).toList()));
+    return connectFuture
+        .then(
+            (c) => _filters.find({
+    }).toList().then((List<Map> data) =>
+        data.map((Map datum) => Filter.fromJson(datum)).toList()));
   }
 
   Future persistFilter(Filter filter) {

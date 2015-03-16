@@ -29,8 +29,8 @@ main() {
 
   group('MongoIndexPersister', () {
     test('cleanup/removeAllIndices works', () async {
-      await MongoIndexPersister.withIndexPersister(
-          (IndexPersister persister) async {
+      await MongoIndexPersister
+          .withIndexPersister((IndexPersister persister) async {
         List<Index> indices =
             await persister.removeAllIndices().then((_) => persister.indices);
         expect(indices.length, 0);
@@ -38,8 +38,8 @@ main() {
     });
 
     test('persist works', () async {
-      await MongoIndexPersister.withIndexPersister(
-          (IndexPersister persister) async {
+      await MongoIndexPersister
+          .withIndexPersister((IndexPersister persister) async {
         await persister.persistIndex(srcIndex);
         List<Index> indices = await persister.indices;
         expect(indices.length, 1);
@@ -50,16 +50,16 @@ main() {
     });
 
     test('lookup works', () async {
-      await MongoIndexPersister.withIndexPersister(
-          (IndexPersister persister) async {
+      await MongoIndexPersister
+          .withIndexPersister((IndexPersister persister) async {
         final index = await persister.lookupIndex(indexId);
         expect(index.paths.containsKey(thisDir), true);
       });
     });
 
     test('add path works', () async {
-      await MongoIndexPersister.withIndexPersister(
-          (IndexPersister persister) async {
+      await MongoIndexPersister
+          .withIndexPersister((IndexPersister persister) async {
         final index = await persister.addPaths(indexId, ['/tmp/x', '/tmp/y']);
         expect(index.paths['/tmp/x'], emptyPruneSpec);
         expect(index.paths['/tmp/y'], emptyPruneSpec);
@@ -67,8 +67,8 @@ main() {
     });
 
     test('remove path works', () async {
-      await MongoIndexPersister.withIndexPersister(
-          (IndexPersister persister) async {
+      await MongoIndexPersister
+          .withIndexPersister((IndexPersister persister) async {
         final index =
             await persister.removePaths(indexId, ['/tmp/x', '/tmp/y']);
         expect(index.paths['/tmp/x'], null);
@@ -77,8 +77,8 @@ main() {
     });
 
     test('remove index works', () async {
-      await MongoIndexPersister.withIndexPersister(
-          (IndexPersister persister) async {
+      await MongoIndexPersister
+          .withIndexPersister((IndexPersister persister) async {
         final removedIndexId = await persister.removeIndex(srcIndex.id);
         expect(indexId, indexId);
         final index = await persister.lookupIndex(indexId);

@@ -333,8 +333,8 @@ class ArgProcessor {
   bool get impliesUpdate => updateFlag;
   bool get impliesRemoval => removeItemFlag || removeAllFlag;
   bool get hasItems => hasIndices || hasFilters;
-  bool get impliesListItems => listItemsFlag ||
-    (hasItems && positionals.isEmpty);
+  bool get impliesListItems =>
+      listItemsFlag || (hasItems && positionals.isEmpty);
   bool get impliesListFiles => listFilesFlag;
 
   final snakeCharsRe = new RegExp(r'^[\w_]+$');
@@ -388,7 +388,6 @@ class ArgProcessor {
             (String positional) => grepArgs.addAll(['-e', positional]));
         return grepWithIndexer(targetIndices, grepArgs, indexer, filters);
       } else {
-
         if (impliesListItems) {
           await listItems(indexer);
         }
@@ -520,8 +519,8 @@ remove-item requires -i and/or -f specifying named items to remove''');
     return _filters;
   }
 
-  removeSpecifiedIndices(Indexer indexer) => matchingIndices(indexer).then(
-      (List<Index> indices) async {
+  removeSpecifiedIndices(Indexer indexer) => matchingIndices(indexer)
+      .then((List<Index> indices) async {
     _logger.info('Removing indices $indexArgs matching '
         '${nameItems(indices).toList()}');
     indices.forEach((Index index) async {
@@ -530,16 +529,15 @@ remove-item requires -i and/or -f specifying named items to remove''');
     });
   });
 
-  removeSpecifiedFilters(Indexer indexer) => matchingFilters(indexer).then(
-      (List<Filter> filters) {
+  removeSpecifiedFilters(Indexer indexer) => matchingFilters(indexer)
+      .then((List<Filter> filters) {
     _logger.info('Removing filters $filterArgs matching '
         '${nameItems(filters).toList()}');
   });
 
   updateEmacsFile(Indexer indexer) async {
     final theIndices = (await indexer.indices);
-    final parts = new StringBuffer(
-      '''
+    final parts = new StringBuffer('''
 (defun xge ()
   "Run with generate emacs file option, then load the file"
   (interactive)
