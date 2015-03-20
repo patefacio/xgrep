@@ -13,11 +13,11 @@ void main() {
   final topDir = path.dirname(path.dirname(here));
   useDartFormatter = true;
   System ebisu = system('xgrep')
-    ..includeHop = true
+    ..includesHop = true
     ..license = 'boost'
     ..rootPath = topDir
     ..pubSpec = (pubspec('xgrep')
-        ..version = '0.0.3'
+        ..version = '0.0.4'
         ..doc = 'A library/script for locating/grepping things on linux'
         ..homepage = 'https://github.com/patefacio/xgrep'
                  )
@@ -248,14 +248,14 @@ files and .git and .pub folders.
       library('test_index'),
       library('test_filter'),
       library('test_mongo_index_persister')
-      ..includeLogger = true,
+      ..includesLogger = true,
       library('test_mlocate_index_updater')
-      ..includeLogger = true,
+      ..includesLogger = true,
       library('test_xgrep_script'),
     ]
     ..libraries = [
       library('xgrep')
-      ..includeLogger = true
+      ..includesLogger = true
       ..imports = [
         '"package:path/path.dart" as path',
         "'package:ebisu/ebisu_utils.dart' as ebisu_utils",
@@ -270,12 +270,12 @@ files and .git and .pub folders.
         part('index')
         ..classes = [
           class_('filter')
-          ..immutable = true
+          ..isImmutable = true
           ..doc = r"""
 A list of patterns and a flag indicating whether this is an inclusion
 filter.
 """
-          ..opEquals = true
+          ..hasOpEquals = true
           ..members = ([
             member('id')
             ..doc = 'Uniquely identifies the filter set'
@@ -290,9 +290,9 @@ filter.
           ..doc = '''
 Comparable to *prune* flags on *updatedb* linux command.
 '''
-          ..immutable = true
-          ..opEquals = true
-          ..jsonSupport = true
+          ..isImmutable = true
+          ..hasOpEquals = true
+          ..hasJsonSupport = true
           ..members = [
             member('names')
             ..doc = '''
@@ -304,7 +304,7 @@ Fully qualified paths which should not be included in a path database.'''
             ..type = 'List<String>'..classInit = [],
           ],
           class_('find_args')
-          ..immutable = true
+          ..isImmutable = true
           ..members = [
             member('includes')..type = 'List<RegExp>'..classInit = [],
             member('excludes')..type = 'List<RegExp>'..classInit = [],
@@ -314,7 +314,7 @@ Fully qualified paths which should not be included in a path database.'''
 Defines a name index which establishes a set of filesystem paths that can be
 indexed and later searched.
 '''
-          ..opEquals = true
+          ..hasOpEquals = true
           ..members = [
             member('id')..type = 'Id'..access = RO,
             member('paths')
@@ -328,7 +328,7 @@ that path'''
             ..access = RO
           ],
           class_('index_stats')
-          ..immutable = true
+          ..isImmutable = true
           ..members = [
             member('index')..type = 'Index',
             member('last_update')..type = 'DateTime',
@@ -351,7 +351,7 @@ command. Also provides support for finding matching files associated
 with an index.'''
           ..isAbstract = true,
           class_('indexer')
-          ..immutable = true
+          ..isImmutable = true
           ..members = [
             member('index_persister')..type = 'IndexPersister',
             member('index_updater')..type = 'IndexUpdater'

@@ -1,5 +1,7 @@
 library xgrep.test.test_xgrep_script;
 
+import 'package:args/args.dart';
+import 'package:logging/logging.dart';
 import 'package:unittest/unittest.dart';
 // custom <additional imports>
 
@@ -8,6 +10,8 @@ import 'package:path/path.dart';
 import 'dart:io';
 
 // end <additional imports>
+
+final _logger = new Logger('test_xgrep_script');
 
 // custom <library test_xgrep_script>
 
@@ -49,7 +53,10 @@ addTest(testName, scriptArgs, required, [List requiredNot = const []]) => test(
 }));
 
 // end <library test_xgrep_script>
-main() {
+main([List<String> args]) {
+  Logger.root.onRecord.listen(
+      (LogRecord r) => print("${r.loggerName} [${r.level}]:\t${r.message}"));
+  Logger.root.level = Level.OFF;
 // custom <main>
 
   defaultCollectionPrefix = 'test';

@@ -1,14 +1,21 @@
 library xgrep.test.test_filter;
 
+import 'package:args/args.dart';
+import 'package:logging/logging.dart';
 import 'package:unittest/unittest.dart';
 // custom <additional imports>
 import 'package:xgrep/xgrep.dart';
 import 'package:id/id.dart';
 // end <additional imports>
 
+final _logger = new Logger('test_filter');
+
 // custom <library test_filter>
 // end <library test_filter>
-main() {
+main([List<String> args]) {
+  Logger.root.onRecord.listen(
+      (LogRecord r) => print("${r.loggerName} [${r.level}]:\t${r.message}"));
+  Logger.root.level = Level.OFF;
 // custom <main>
 
   group('filter basics', () {

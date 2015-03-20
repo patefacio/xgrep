@@ -1,5 +1,6 @@
 library xgrep.test.test_mlocate_index_updater;
 
+import 'package:args/args.dart';
 import 'package:logging/logging.dart';
 import 'package:unittest/unittest.dart';
 // custom <additional imports>
@@ -17,7 +18,10 @@ final _logger = new Logger('test_mlocate_index_updater');
 
 // custom <library test_mlocate_index_updater>
 // end <library test_mlocate_index_updater>
-main() {
+main([List<String> args]) {
+  Logger.root.onRecord.listen(
+      (LogRecord r) => print("${r.loggerName} [${r.level}]:\t${r.message}"));
+  Logger.root.level = Level.OFF;
 // custom <main>
 
   if (false) {

@@ -1,5 +1,7 @@
 library xgrep.test.test_index;
 
+import 'package:args/args.dart';
+import 'package:logging/logging.dart';
 import 'package:unittest/unittest.dart';
 // custom <additional imports>
 import 'dart:async';
@@ -10,9 +12,14 @@ import 'package:path/path.dart';
 import 'package:xgrep/xgrep.dart';
 // end <additional imports>
 
+final _logger = new Logger('test_index');
+
 // custom <library test_index>
 // end <library test_index>
-main() {
+main([List<String> args]) {
+  Logger.root.onRecord.listen(
+      (LogRecord r) => print("${r.loggerName} [${r.level}]:\t${r.message}"));
+  Logger.root.level = Level.OFF;
 // custom <main>
 
   if (false) {
