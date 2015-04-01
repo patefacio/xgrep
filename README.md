@@ -78,8 +78,8 @@ If the -e option is used the file **$HOME/.xgreps.el** is written
 
   giving:
 
-        .../ebisu_utils.dart:152:    result.add(guts.join(',\n'));
-        .../ebisu_utils.dart:163:    result.add(guts.join(',\n'));
+        .../ebisu.dart:152:    result.add(guts.join(',\n'));
+        .../ebisu.dart:163:    result.add(guts.join(',\n'));
         ...
         .../ebisu_cpp.dart:448:template< ${decls.join(',\n          ')} >''';
         .../ebisu_cpp.dart:672:  return result.join('');

@@ -58,8 +58,8 @@ Filter should be: filter_id [+-] pattern ...
 
   Map toJson() => {
     "_id": _id.snake,
-    "isInclusion": ebisu_utils.toJson(isInclusion),
-    "patterns": ebisu_utils.toJson(patterns),
+    "isInclusion": ebisu.toJson(isInclusion),
+    "patterns": ebisu.toJson(patterns),
   };
 
   static Filter fromJson(Object json) {
@@ -74,7 +74,7 @@ Filter should be: filter_id [+-] pattern ...
   Filter._fromJsonMapImpl(Map jsonMap)
       : _id = idFromString(jsonMap["_id"]),
         _isInclusion = jsonMap["isInclusion"],
-        _patterns = ebisu_utils.constructListFromJsonData(
+        _patterns = ebisu.constructListFromJsonData(
             jsonMap["patterns"], (data) => data);
 
   // end <class Filter>
@@ -102,8 +102,7 @@ class PruneSpec {
   // custom <class PruneSpec>
   // end <class PruneSpec>
 
-  Map toJson() =>
-      {"names": ebisu_utils.toJson(names), "paths": ebisu_utils.toJson(paths),};
+  Map toJson() => {"names": ebisu.toJson(names), "paths": ebisu.toJson(paths),};
 
   static PruneSpec fromJson(Object json) {
     if (json == null) return null;
@@ -117,10 +116,9 @@ class PruneSpec {
   PruneSpec._fromJsonMapImpl(Map jsonMap)
       :
       // names is List<String>
-      names = ebisu_utils.constructListFromJsonData(
-          jsonMap["names"], (data) => data),
+      names = ebisu.constructListFromJsonData(jsonMap["names"], (data) => data),
         // paths is List<String>
-        paths = ebisu_utils.constructListFromJsonData(
+        paths = ebisu.constructListFromJsonData(
             jsonMap["paths"], (data) => data);
 
   PruneSpec._copy(PruneSpec other)
@@ -167,7 +165,7 @@ class Index {
   Index.withPruning(this._id, this._paths,
       [this._pruneNames = commonPruneNames]);
 
-  toString() => '(${runtimeType}) => ${ebisu_utils.prettyJsonMap(toJson())}';
+  toString() => '(${runtimeType}) => ${ebisu.prettyJsonMap(toJson())}';
 
   addPath(String path, [PruneSpec pruneSpec = emptyPruneSpec]) =>
       paths[path] = pruneSpec;
@@ -176,8 +174,8 @@ class Index {
 
   Map toJson() => {
     "_id": _id.snake,
-    "paths": ebisu_utils.toJson(paths),
-    "pruneNames": ebisu_utils.toJson(pruneNames),
+    "paths": ebisu.toJson(paths),
+    "pruneNames": ebisu.toJson(pruneNames),
   };
 
   static Index fromJson(Object json) {
@@ -192,11 +190,11 @@ class Index {
   void _fromJsonMapImpl(Map jsonMap) {
     _id = idFromString(jsonMap["_id"]);
     // paths is List<String>
-    _paths = ebisu_utils.constructMapFromJsonData(
+    _paths = ebisu.constructMapFromJsonData(
         jsonMap["paths"], (data) => PruneSpec.fromJson(data));
     // pruneNames is List<String>
-    _pruneNames = ebisu_utils.constructListFromJsonData(
-        jsonMap["pruneNames"], (data) => data);
+    _pruneNames =
+        ebisu.constructListFromJsonData(jsonMap["pruneNames"], (data) => data);
   }
 
   // end <class Index>

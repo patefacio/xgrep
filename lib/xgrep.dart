@@ -5,7 +5,7 @@ import 'dart:convert' as convert;
 import 'dart:convert';
 import 'dart:io';
 import 'package:collection/equality.dart';
-import 'package:ebisu/ebisu_utils.dart' as ebisu_utils;
+import 'package:ebisu/ebisu.dart' as ebisu;
 import 'package:id/id.dart';
 import 'package:logging/logging.dart';
 import 'package:mongo_dart/mongo_dart.dart';

@@ -258,7 +258,7 @@ files and .git and .pub folders.
       ..includesLogger = true
       ..imports = [
         '"package:path/path.dart" as path',
-        "'package:ebisu/ebisu_utils.dart' as ebisu_utils",
+        "'package:ebisu/ebisu.dart' as ebisu",
         'package:id/id.dart',
         'package:quiver/iterables.dart',
         'package:mongo_dart/mongo_dart.dart',
