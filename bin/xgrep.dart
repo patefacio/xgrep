@@ -47,7 +47,6 @@
 /// arguments a the prior search is replacing the grep pattern with the
 /// positional argument.
 ///
-
 import 'dart:async';
 import 'dart:io';
 import 'package:args/args.dart';
@@ -58,7 +57,6 @@ import 'package:xgrep/xgrep.dart';
 
 //! The parser for this script
 ArgParser _parser;
-
 //! The comment and usage associated with this script
 void _usage() {
   print(r'''
@@ -113,7 +111,6 @@ positional argument.
 ''');
   print(_parser.getUsage());
 }
-
 //! Method to parse command line options.
 //! The result is a map containing all options, including positional options
 Map _parseArgs(List<String> args) {
@@ -280,11 +277,8 @@ Select log level from:
     throw e;
   }
 }
-
 final _logger = new Logger('xgrep');
-
 /// All arguments for processing as a unit.
-///
 class ArgProcessor {
   List<String> args;
   Map options;
@@ -304,6 +298,7 @@ class ArgProcessor {
   bool emacsSupportFlag;
   List<String> grepArgs;
   Map<String, PruneSpec> pathMap = {};
+
   // custom <class ArgProcessor>
 
   ArgProcessor(List<String> this.args, Map options, List<String> positionals)
@@ -633,10 +628,10 @@ xgrep -i my_dart \\
   }
 
   // end <class ArgProcessor>
+
   List<Index> _indices;
   List<Filter> _filters;
 }
-
 main(List<String> args) async {
   Logger.root.onRecord.listen(
       (LogRecord r) => print("${r.loggerName} [${r.level}]:\t${r.message}"));
@@ -644,7 +639,6 @@ main(List<String> args) async {
   Map argResults = _parseArgs(args);
   Map options = argResults['options'];
   List positionals = argResults['rest'];
-
   // custom <xgrep main>
 
   final argProcessor = new ArgProcessor(args, options, positionals);

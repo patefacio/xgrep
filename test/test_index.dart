@@ -1,8 +1,9 @@
-library xgrep.test.test_index;
+library xgrep.test_index;
 
 import 'package:args/args.dart';
 import 'package:logging/logging.dart';
-import 'package:unittest/unittest.dart';
+import 'package:test/test.dart';
+
 // custom <additional imports>
 import 'dart:async';
 import 'dart:io';
@@ -16,6 +17,7 @@ final _logger = new Logger('test_index');
 
 // custom <library test_index>
 // end <library test_index>
+
 main([List<String> args]) {
   Logger.root.onRecord.listen(
       (LogRecord r) => print("${r.loggerName} [${r.level}]:\t${r.message}"));
@@ -58,7 +60,7 @@ main([List<String> args]) {
     });
 
     test('basic indexer', () async {
-      final thisDir = dirname(Platform.script.path);
+      final thisDir = dirname(Platform.script.toFilePath());
       final index = new Index(idFromString('test_indexer'), [thisDir]);
 
       await Indexer.withIndexer((Indexer indexer) async {

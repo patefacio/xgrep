@@ -2,7 +2,6 @@ part of xgrep.xgrep;
 
 /// A list of patterns and a flag indicating whether this is an inclusion
 /// filter.
-///
 class Filter {
   const Filter(this._id, this._isInclusion, this._patterns);
 
@@ -19,6 +18,7 @@ class Filter {
   bool get isInclusion => _isInclusion;
   /// List of string patterns comprising the filter
   List<String> get patterns => _patterns;
+
   // custom <class Filter>
 
   static interpret(String s) => _notRegexRe.hasMatch(s) ? s : new RegExp(s);
@@ -78,13 +78,13 @@ Filter should be: filter_id [+-] pattern ...
             jsonMap["patterns"], (data) => data);
 
   // end <class Filter>
+
   final Id _id;
   final bool _isInclusion;
   final List<String> _patterns;
 }
 
 /// Comparable to *prune* flags on *updatedb* linux command.
-///
 class PruneSpec {
   const PruneSpec(this.names, this.paths);
 
@@ -99,6 +99,7 @@ class PruneSpec {
   final List<String> names;
   /// Fully qualified paths which should not be included in a path database.
   final List<String> paths;
+
   // custom <class PruneSpec>
   // end <class PruneSpec>
 
@@ -131,13 +132,14 @@ class FindArgs {
 
   final List<RegExp> includes;
   final List<RegExp> excludes;
+
   // custom <class FindArgs>
   // end <class FindArgs>
+
 }
 
 /// Defines a name index which establishes a set of filesystem paths that can be
 /// indexed and later searched.
-///
 class Index {
   bool operator ==(Index other) => identical(this, other) ||
       _id == other._id &&
@@ -153,6 +155,7 @@ class Index {
   Map<String, PruneSpec> get paths => _paths;
   /// Global set of names to prune on all paths in this index
   List<String> get pruneNames => _pruneNames;
+
   // custom <class Index>
 
   Index._default();
@@ -198,6 +201,7 @@ class Index {
   }
 
   // end <class Index>
+
   Id _id;
   Map<String, PruneSpec> _paths;
   List<String> _pruneNames;
@@ -208,15 +212,17 @@ class IndexStats {
 
   final Index index;
   final DateTime lastUpdate;
+
   // custom <class IndexStats>
   // end <class IndexStats>
+
 }
 
 /// Establishes an interface that persists *Indices* as well as other
 /// meta-data associated with the creation, update, and usage those
 /// *Indices*.
-///
 abstract class IndexPersister {
+
   // custom <class IndexPersister>
 
   Future get connectFuture => (_connectFuture == null)
@@ -241,6 +247,7 @@ abstract class IndexPersister {
   Future removeAllFilters();
 
   // end <class IndexPersister>
+
   Future _connectFuture;
 }
 
@@ -249,6 +256,7 @@ abstract class IndexPersister {
 /// command. Also provides support for finding matching files associated
 /// with an index.
 abstract class IndexUpdater {
+
   // custom <class IndexUpdater>
 
   /// Trigger an update of the index - for example run a linux *updatedb* on all
@@ -264,6 +272,7 @@ abstract class IndexUpdater {
   Future<Stream<String>> findPaths(Index index, [List filters = const []]);
 
   // end <class IndexUpdater>
+
 }
 
 class Indexer {
@@ -271,6 +280,7 @@ class Indexer {
 
   final IndexPersister indexPersister;
   final IndexUpdater indexUpdater;
+
   // custom <class Indexer>
 
   static Future withIndexer(Future callback(Indexer indexer)) {
@@ -336,7 +346,9 @@ class Indexer {
   Future removeAllItems() => removeAllIndices().then((_) => removeAllFilters());
 
   // end <class Indexer>
+
 }
+
 // custom <part index>
 
 const commonPruneNames = const ['.svn', '.git', '.pub'];

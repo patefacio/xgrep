@@ -1,8 +1,9 @@
-library xgrep.test.test_xgrep_script;
+library xgrep.test_xgrep_script;
 
 import 'package:args/args.dart';
 import 'package:logging/logging.dart';
-import 'package:unittest/unittest.dart';
+import 'package:test/test.dart';
+
 // custom <additional imports>
 
 import 'package:xgrep/xgrep.dart';
@@ -15,7 +16,7 @@ final _logger = new Logger('test_xgrep_script');
 
 // custom <library test_xgrep_script>
 
-final testFolder = dirname(Platform.script.path);
+final testFolder = dirname(Platform.script.toFilePath());
 final rootFolder = dirname(testFolder);
 final binFolder = join(dirname(testFolder), 'bin');
 final xgrep = join(binFolder, 'xgrep.dart');
@@ -53,6 +54,7 @@ addTest(testName, scriptArgs, required, [List requiredNot = const []]) => test(
 }));
 
 // end <library test_xgrep_script>
+
 main([List<String> args]) {
   Logger.root.onRecord.listen(
       (LogRecord r) => print("${r.loggerName} [${r.level}]:\t${r.message}"));

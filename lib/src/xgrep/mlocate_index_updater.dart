@@ -3,6 +3,7 @@ part of xgrep.xgrep;
 /// Default implementation of an [IndexUpdater] which manages indices with
 /// Linux *updatedb* and *mlocate*
 class MlocateIndexUpdater extends IndexUpdater {
+
   // custom <class MlocateIndexUpdater>
 
   Future updateIndex(Index index) {
@@ -146,6 +147,8 @@ class MlocateIndexUpdater extends IndexUpdater {
   }
 
   // end <class MlocateIndexUpdater>
+
 }
+
 // custom <part mlocate_index_updater>
 // end <part mlocate_index_updater>

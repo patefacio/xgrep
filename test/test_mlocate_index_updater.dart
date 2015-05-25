@@ -1,8 +1,9 @@
-library xgrep.test.test_mlocate_index_updater;
+library xgrep.test_mlocate_index_updater;
 
 import 'package:args/args.dart';
 import 'package:logging/logging.dart';
-import 'package:unittest/unittest.dart';
+import 'package:test/test.dart';
+
 // custom <additional imports>
 
 import 'package:xgrep/xgrep.dart';
@@ -18,6 +19,7 @@ final _logger = new Logger('test_mlocate_index_updater');
 
 // custom <library test_mlocate_index_updater>
 // end <library test_mlocate_index_updater>
+
 main([List<String> args]) {
   Logger.root.onRecord.listen(
       (LogRecord r) => print("${r.loggerName} [${r.level}]:\t${r.message}"));
@@ -34,7 +36,7 @@ main([List<String> args]) {
   final varDir = '/var';
   final bin = '/bin';
   final home = Platform.environment['HOME'];
-  final thisDir = dirname(Platform.script.path);
+  final thisDir = dirname(Platform.script.toFilePath());
   final thisDirDotted = split(thisDir).sublist(1).join('.');
   final indexId = idFromString('test_index');
   final index = new Index(indexId, [varDir, bin, thisDir]);

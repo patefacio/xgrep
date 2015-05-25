@@ -1,8 +1,9 @@
-library xgrep.test.test_mongo_index_persister;
+library xgrep.test_mongo_index_persister;
 
 import 'package:args/args.dart';
 import 'package:logging/logging.dart';
-import 'package:unittest/unittest.dart';
+import 'package:test/test.dart';
+
 // custom <additional imports>
 
 import 'dart:async';
@@ -17,6 +18,7 @@ final _logger = new Logger('test_mongo_index_persister');
 
 // custom <library test_mongo_index_persister>
 // end <library test_mongo_index_persister>
+
 main([List<String> args]) {
   Logger.root.onRecord.listen(
       (LogRecord r) => print("${r.loggerName} [${r.level}]:\t${r.message}"));
@@ -25,7 +27,7 @@ main([List<String> args]) {
 
   defaultCollectionPrefix = 'test';
 
-  final thisDir = dirname(Platform.script.path);
+  final thisDir = dirname(Platform.script.toFilePath());
   final libDir = join(dirname(thisDir), 'lib');
   final indexId = idFromString('test_index');
   final indexName = indexId.snake;

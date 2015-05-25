@@ -4,6 +4,7 @@ part of xgrep.xgrep;
 /// information in *MongoDB*
 class MongoIndexPersister extends IndexPersister {
   String get uri => _uri;
+
   // custom <class MongoIndexPersister>
 
   MongoIndexPersister([String uri]) : _uri = (uri == null) ? _mongoUri : uri;
@@ -132,11 +133,13 @@ When adding paths provide either:
   }
 
   // end <class MongoIndexPersister>
+
   final String _uri;
   Db _db;
   DbCollection _indices;
   DbCollection _filters;
 }
+
 // custom <part mongo_index_persister>
 
 const defaultUri = "mongodb://127.0.0.1/xgreps";

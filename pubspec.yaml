@@ -1,5 +1,5 @@
 name: xgrep
-version: 0.0.5
+version: 0.0.6
 author: Daniel Davidson <dbdavidson@yahoo.com>
 homepage: https://github.com/patefacio/xgrep
 description: >
@@ -8,27 +8,26 @@ dependencies:
 
 # custom <xgrep dependencies>
 
-  id: "^1.0.4"
+  id: "^1.0.10"
     
-  ebisu: "^0.1.0"
+  ebisu: "^0.6.1"
     
-  mongo_dart: "^0.1.46"
+  mongo_dart: "^0.1.47"
 
-  collection: "^1.1.0"
+  collection: "^1.1.1"
 
-  ebisu: "^0.2.3"
 
 # end <xgrep dependencies>
 
 dev_dependencies:
   yaml: "any"
-  unittest: ">=0.11.0 < 0.12.0"
   browser: "any"
   hop: "any"
   hop_docgen: "any"
 
 # custom <xgrep dev dependencies>
 
+  test: "^0.12.0"
 
 # end <xgrep dev dependencies>
 
@@ -39,7 +38,7 @@ dependency_overrides:
 #    path: /home/dbdavidson/dev/open_source/ebisu
 
 environment:
-  sdk: ">=0.8.10+6 <2.0.0"
+  sdk: ">=1.8.0 <2.0.0"
     
 # end <xgrep dependency overrides>
 

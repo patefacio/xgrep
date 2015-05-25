@@ -9,7 +9,7 @@ void main() {
   Logger.root.onRecord.listen((LogRecord r) =>
       print("${r.loggerName} [${r.level}]:\t${r.message}"));
 
-  String here = path.absolute(Platform.script.path);
+  String here = path.absolute(Platform.script.toFilePath());
   final topDir = path.dirname(path.dirname(here));
   useDartFormatter = true;
   System ebisu = system('xgrep')
@@ -17,7 +17,7 @@ void main() {
     ..license = 'boost'
     ..rootPath = topDir
     ..pubSpec = (pubspec('xgrep')
-        ..version = '0.0.5'
+        ..version = '0.0.6'
         ..doc = 'A library/script for locating/grepping things on linux'
         ..homepage = 'https://github.com/patefacio/xgrep'
                  )

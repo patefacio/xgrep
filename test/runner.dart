@@ -1,4 +1,4 @@
-import 'package:unittest/unittest.dart';
+import 'package:test/test.dart';
 import 'package:logging/logging.dart';
 import 'test_index.dart' as test_index;
 import 'test_filter.dart' as test_filter;
